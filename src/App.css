@@ -1,0 +1,460 @@
+.App {
+  min-height: 100vh;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+/* Light Theme */
+.light-theme .App {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Dark Theme */
+.dark-theme .App {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+/* Dark mode text improvements */
+.dark-theme {
+  color: #ffffff !important;
+  --scenario-bg: #262626;
+  --scenario-border: #434343;
+  --scenario-text: #ffffff;
+  --scenario-desc: #d9d9d9;
+}
+
+.dark-theme h1,
+.dark-theme h2,
+.dark-theme h3,
+.dark-theme h4,
+.dark-theme h5,
+.dark-theme h6 {
+  color: #ffffff !important;
+}
+
+.dark-theme p {
+  color: #e6e6e6 !important;
+}
+
+.dark-theme .ant-typography {
+  color: #e6e6e6 !important;
+}
+
+/* Light mode CSS variables */
+.light-theme {
+  --scenario-bg: #f5f5f5;
+  --scenario-border: #e8e8e8;
+  --scenario-text: #1f2937;
+  --scenario-desc: #666;
+}
+
+/* Override Ant Design theme for better integration */
+.ant-layout {
+  background: transparent;
+}
+
+/* Light Theme Cards */
+.light-theme .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Dark Theme Cards */
+.dark-theme .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  background: rgba(31, 31, 31, 0.95);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.light-theme .ant-card-head-title {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.dark-theme .ant-card-head-title {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Custom statistics styling */
+.light-theme .ant-statistic-title {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dark-theme .ant-statistic-title {
+  color: #d9d9d9;
+  font-weight: 500;
+}
+
+.light-theme .ant-statistic-content {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.dark-theme .ant-statistic-content {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Enhanced table styling */
+.ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.light-theme .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #374151;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.dark-theme .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #262626 0%, #1f1f1f 100%);
+  color: #ffffff;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.light-theme .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.dark-theme .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #303030;
+  transition: all 0.3s ease;
+}
+
+.light-theme .ant-table-tbody > tr:hover > td {
+  background-color: #f8fafc !important;
+}
+
+.dark-theme .ant-table-tbody > tr:hover > td {
+  background-color: #262626 !important;
+}
+
+/* Dark mode input improvements */
+.dark-theme .ant-input,
+.dark-theme .ant-input-number,
+.dark-theme .ant-input-number-input {
+  background-color: #1f1f1f !important;
+  border-color: #434343 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-input::placeholder,
+.dark-theme .ant-input-number-input::placeholder {
+  color: #8c8c8c !important;
+}
+
+.dark-theme .ant-select-selector {
+  background-color: #1f1f1f !important;
+  border-color: #434343 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-select-selection-item {
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-select-item {
+  background-color: #1f1f1f !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-select-item:hover {
+  background-color: #262626 !important;
+}
+
+.dark-theme .ant-select-item-option-content {
+  color: #ffffff !important;
+}
+
+/* Dark mode tabs improvements */
+.dark-theme .ant-tabs-tab {
+  color: #d9d9d9 !important;
+}
+
+.dark-theme .ant-tabs-tab:hover {
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-tabs-tab-active {
+  color: #1890ff !important;
+}
+
+.dark-theme .ant-tabs-content-holder {
+  color: #ffffff !important;
+}
+
+/* Dark mode tooltip improvements */
+.dark-theme .ant-tooltip-inner {
+  background-color: #262626 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-tooltip-arrow::before {
+  background-color: #262626 !important;
+}
+
+/* Dark mode modal improvements */
+.dark-theme .ant-modal-content {
+  background-color: #1f1f1f !important;
+}
+
+.dark-theme .ant-modal-body {
+  color: #ffffff !important;
+}
+
+/* Force primary button styling in dark mode - ULTRA AGGRESSIVE */
+.dark-theme .ant-btn-primary,
+.dark-theme .ant-btn-primary:hover,
+.dark-theme .ant-btn-primary:focus,
+.dark-theme .ant-btn-primary:active,
+.dark-theme .ant-btn-primary:visited,
+.dark-theme .ant-btn-primary:link {
+  background: #1890ff !important;
+  background-image: none !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3) !important;
+}
+
+.dark-theme .ant-btn-primary:hover {
+  background: #096dd9 !important;
+  background-image: none !important;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4) !important;
+}
+
+/* Force all text and icons to be white */
+.dark-theme .ant-btn-primary,
+.dark-theme .ant-btn-primary *,
+.dark-theme .ant-btn-primary .anticon,
+.dark-theme .ant-btn-primary span {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* Override any Ant Design dark algorithm styling */
+.dark-theme .ant-btn-primary[class*="ant-btn"] {
+  background: #1890ff !important;
+  color: #ffffff !important;
+}
+
+/* Fix dashed button in dark mode */
+.dark-theme .ant-btn-dashed {
+  background-color: #1f1f1f !important;
+  border: 2px dashed #434343 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-btn-dashed:hover {
+  background-color: #262626 !important;
+  border-color: #595959 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-btn-dashed .anticon {
+  color: #ffffff !important;
+}
+
+/* Button enhancements */
+.ant-btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Dark mode button improvements */
+.dark-theme .ant-btn-default {
+  background-color: #262626 !important;
+  border-color: #434343 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-btn-default:hover {
+  background-color: #434343 !important;
+  border-color: #595959 !important;
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-btn-text {
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-btn-text:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.ant-btn-dashed {
+  border: 2px dashed #d1d5db;
+  color: #6b7280;
+}
+
+.ant-btn-dashed:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+/* Modal enhancements */
+.ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.light-theme .ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  padding: 20px 24px;
+}
+
+.dark-theme .ant-modal-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-bottom: none;
+  padding: 20px 24px;
+}
+
+.ant-modal-title {
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.ant-modal-body {
+  padding: 24px;
+}
+
+/* Form enhancements */
+.light-theme .ant-form-item-label > label {
+  font-weight: 500;
+  color: #374151;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.dark-theme .ant-form-item-label > label {
+  font-weight: 500;
+  color: #e6e6e6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.ant-input,
+.ant-input-number {
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5715;
+}
+
+.ant-input-number-input {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5715 !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-number:focus,
+.ant-input-number-focused {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+}
+
+/* Select enhancements */
+.ant-select-selector {
+  border-radius: 6px !important;
+  border: 1px solid #d1d5db !important;
+  transition: all 0.3s ease !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5715 !important;
+}
+
+.ant-select-selection-item {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5715 !important;
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1) !important;
+}
+
+/* Select dropdown options */
+.ant-select-item {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5715 !important;
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.ant-select-item-option-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5715 !important;
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Chart container styling */
+.recharts-wrapper {
+  border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .ant-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ant-card {
+    margin-bottom: 12px;
+    border-radius: 8px;
+  }
+  
+  .ant-table {
+    font-size: 12px;
+  }
+  
+  .ant-statistic-content {
+    font-size: 18px;
+  }
+  
+  .ant-btn {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ant-card {
+    margin: 0 8px 12px 8px;
+  }
+  
+  .ant-table {
+    font-size: 11px;
+  }
+  
+  .ant-modal {
+    margin: 16px;
+  }
+}
