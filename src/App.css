@@ -21,6 +21,8 @@
   --scenario-border: #434343;
   --scenario-text: #ffffff;
   --scenario-desc: #d9d9d9;
+  --select-bg: #434343;
+  --select-text: #ffffff;
 }
 
 .dark-theme h1,
@@ -46,11 +48,51 @@
   --scenario-border: #e8e8e8;
   --scenario-text: #1f2937;
   --scenario-desc: #666;
+  --select-bg: #ffffff;
+  --select-text: #000000;
 }
 
 /* Override Ant Design theme for better integration */
 .ant-layout {
   background: transparent;
+}
+
+/* Dark mode Select component styling - Cleaned up */
+.dark-theme .ant-select-selector {
+  background-color: #434343 !important;
+  color: #ffffff !important;
+  border-color: #595959 !important;
+}
+
+.dark-theme .ant-select-selection-placeholder {
+  color: #d9d9d9 !important;
+}
+
+.dark-theme .ant-select-selection-item {
+  color: #ffffff !important;
+}
+
+.dark-theme .ant-select-arrow {
+  color: #d9d9d9 !important;
+}
+
+.dark-theme .ant-select-dropdown {
+  background-color: #434343 !important;
+  border-color: #595959 !important;
+}
+
+.dark-theme .ant-select-item {
+  color: #ffffff !important;
+  background-color: #434343 !important;
+}
+
+.dark-theme .ant-select-item:hover {
+  background-color: #595959 !important;
+}
+
+.dark-theme .ant-select-item-option-selected {
+  background-color: #1890ff !important;
+  color: #ffffff !important;
 }
 
 /* Light Theme Cards */
@@ -162,28 +204,6 @@
   color: #8c8c8c !important;
 }
 
-.dark-theme .ant-select-selector {
-  background-color: #1f1f1f !important;
-  border-color: #434343 !important;
-  color: #ffffff !important;
-}
-
-.dark-theme .ant-select-selection-item {
-  color: #ffffff !important;
-}
-
-.dark-theme .ant-select-item {
-  background-color: #1f1f1f !important;
-  color: #ffffff !important;
-}
-
-.dark-theme .ant-select-item:hover {
-  background-color: #262626 !important;
-}
-
-.dark-theme .ant-select-item-option-content {
-  color: #ffffff !important;
-}
 
 /* Dark mode tabs improvements */
 .dark-theme .ant-tabs-tab {

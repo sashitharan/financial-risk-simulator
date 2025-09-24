@@ -1,0 +1,140 @@
+{
+  "backtestingScenarios": [
+    {
+      "id": "covid-crash-2020",
+      "name": "COVID-19 Market Crash (Feb-Apr 2020)",
+      "description": "Replay the COVID-19 market crash scenario",
+      "startDate": "2020-02-01",
+      "endDate": "2020-04-30",
+      "period": "daily",
+      "marketConditions": {
+        "equityDecline": -30,
+        "volatilitySpike": 150,
+        "rateCuts": -150,
+        "creditWidening": 200
+      }
+    },
+    {
+      "id": "2008-financial-crisis",
+      "name": "2008 Financial Crisis (Sep-Dec 2008)",
+      "description": "Replay the 2008 financial crisis scenario",
+      "startDate": "2008-09-01",
+      "endDate": "2008-12-31",
+      "period": "daily",
+      "marketConditions": {
+        "equityDecline": -40,
+        "volatilitySpike": 200,
+        "rateCuts": -300,
+        "creditWidening": 500
+      }
+    },
+    {
+      "id": "mild-recession-2022",
+      "name": "Mild Recession (2022)",
+      "description": "Replay the 2022 market downturn scenario",
+      "startDate": "2022-01-01",
+      "endDate": "2022-12-31",
+      "period": "monthly",
+      "marketConditions": {
+        "equityDecline": -15,
+        "volatilitySpike": 80,
+        "rateCuts": -50,
+        "creditWidening": 100
+      }
+    }
+  ],
+  "lifecycleElements": {
+    "fixingInfo": {
+      "lifeCycleDate": "2025-01-20",
+      "lastFixingDate": "2025-01-15",
+      "nextFixingDate": "2025-01-25"
+    },
+    "knockOutLifecycle": {
+      "endDate": ["2025-02-20", "2025-05-20", "2025-08-20", "2025-11-20"],
+      "paymentDate": ["2025-02-25", "2025-05-25", "2025-08-25", "2025-11-25"],
+      "locBarPrice": [0.9, 0.85, 0.8, 0.75],
+      "locKOCpn": [2.5, 2.5, 2.5, 2.5],
+      "KO_Prob": [0.15, 0.25, 0.35, 0.45],
+      "globalKOStar": true
+    },
+    "knockInLifecycle": {
+      "KIBarrier": 0.6,
+      "strikeKI1": 0.65,
+      "strikeKI2": 0.55,
+      "paymentDate": ["2025-12-20"],
+      "knockIn": [false, false, false, false]
+    },
+    "accrualSchedules": {
+      "accruRate": [0.025, 0.025, 0.025, 0.025],
+      "fixCoupon": [2.5, 2.5, 2.5, 2.5],
+      "paymentDate": ["2025-02-25", "2025-05-25", "2025-08-25", "2025-11-25"],
+      "fixingDone": [false, false, false, false]
+    },
+    "underlyingInstruments": {
+      "underlyings": ["BABA UN", "700 HK"],
+      "referencePrice": [162.94, 637.25],
+      "market": "HKEX",
+      "calendar": "HK",
+      "currency": "USD"
+    },
+    "instrumentState": {
+      "status": "LIVE",
+      "alreadyKnockIn": false,
+      "notional": 1000000,
+      "paymentCurrency": "USD"
+    }
+  },
+  "historicalDataTemplate": {
+    "equity": {
+      "BABA UN": [
+        {"date": "2020-02-01", "spot": 162.94, "vol": 25.5},
+        {"date": "2020-02-15", "spot": 158.20, "vol": 28.2},
+        {"date": "2020-03-01", "spot": 145.80, "vol": 45.8},
+        {"date": "2020-03-15", "spot": 98.50, "vol": 78.5},
+        {"date": "2020-04-01", "spot": 112.30, "vol": 65.2},
+        {"date": "2020-04-15", "spot": 125.80, "vol": 52.8},
+        {"date": "2020-04-30", "spot": 138.90, "vol": 42.5}
+      ],
+      "700 HK": [
+        {"date": "2020-02-01", "spot": 637.25, "vol": 22.8},
+        {"date": "2020-02-15", "spot": 625.50, "vol": 25.5},
+        {"date": "2020-03-01", "spot": 580.20, "vol": 38.2},
+        {"date": "2020-03-15", "spot": 420.80, "vol": 65.8},
+        {"date": "2020-04-01", "spot": 485.60, "vol": 55.5},
+        {"date": "2020-04-15", "spot": 520.30, "vol": 48.2},
+        {"date": "2020-04-30", "spot": 565.80, "vol": 38.8}
+      ]
+    },
+    "interestRates": {
+      "USD": [
+        {"date": "2020-02-01", "rate": 1.75},
+        {"date": "2020-03-01", "rate": 1.25},
+        {"date": "2020-04-01", "rate": 0.25},
+        {"date": "2020-04-30", "rate": 0.25}
+      ],
+      "HKD": [
+        {"date": "2020-02-01", "rate": 2.25},
+        {"date": "2020-03-01", "rate": 1.75},
+        {"date": "2020-04-01", "rate": 0.75},
+        {"date": "2020-04-30", "rate": 0.75}
+      ]
+    }
+  },
+  "backtestingMetrics": {
+    "pnlTimeSeries": [],
+    "varComparison": {
+      "predictedVaR": -150000,
+      "realizedLoss": -125000,
+      "conservative": true
+    },
+    "expectedShortfall": {
+      "predicted": -180000,
+      "realized": -155000
+    },
+    "modelRiskAssessment": {
+      "conservativeEnough": true,
+      "accuracy": 0.85,
+      "calibration": "good"
+    }
+  }
+}
