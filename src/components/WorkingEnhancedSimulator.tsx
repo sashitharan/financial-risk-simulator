@@ -1909,12 +1909,25 @@ export default function WorkingEnhancedSimulator() {
                   <Select.OptGroup label="📈 Standard Scenarios - Quick Market Shock Analysis">
                     {STANDARD_SCENARIOS.map((scenario) => (
                       <Select.Option key={scenario.id} value={scenario.id}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          flexWrap: 'wrap',
+                          minWidth: 0,
+                          width: '100%'
+                        }}>
                           {scenario.icon}
-                          <strong>{scenario.name}</strong>
-                          <Tag color={getCategoryColor(scenario.category)}>{scenario.category.toUpperCase()}</Tag>
+                          <strong style={{ flex: '1 1 auto', minWidth: 0 }}>{scenario.name}</strong>
+                          <Tag color={getCategoryColor(scenario.category)} style={{ flex: '0 0 auto' }}>{scenario.category.toUpperCase()}</Tag>
                         </div>
-                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{scenario.description}</div>
+                        <div style={{ 
+                          fontSize: "12px", 
+                          color: "var(--text-secondary)",
+                          marginTop: '4px',
+                          wordBreak: 'break-word',
+                          lineHeight: '1.3'
+                        }}>{scenario.description}</div>
                       </Select.Option>
                     ))}
                   </Select.OptGroup>
@@ -1922,18 +1935,38 @@ export default function WorkingEnhancedSimulator() {
                   <Select.OptGroup label="⚡ Stress Tests - Historical Crisis Simulation">
                     {STRESS_TEST_SCENARIOS.map((scenario) => (
                       <Select.Option key={scenario.id} value={scenario.id}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          flexWrap: 'wrap',
+                          minWidth: 0,
+                          width: '100%'
+                        }}>
                           {scenario.icon}
-                          <strong>{scenario.name}</strong>
+                          <strong style={{ flex: '1 1 auto', minWidth: 0 }}>{scenario.name}</strong>
                           <Tag color={scenario.severity === 'extreme' ? 'red' : 
                                       scenario.severity === 'severe' ? 'orange' : 
-                                      scenario.severity === 'moderate' ? 'yellow' : 'green'}>
+                                      scenario.severity === 'moderate' ? 'yellow' : 'green'}
+                               style={{ flex: '0 0 auto' }}>
                             {scenario.severity?.toUpperCase()}
                           </Tag>
                         </div>
-                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{scenario.description}</div>
+                        <div style={{ 
+                          fontSize: "12px", 
+                          color: "var(--text-secondary)",
+                          marginTop: '4px',
+                          wordBreak: 'break-word',
+                          lineHeight: '1.3'
+                        }}>{scenario.description}</div>
                         {scenario.historicalBasis && (
-                          <div style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>Based on: {scenario.historicalBasis}</div>
+                          <div style={{ 
+                            fontSize: "10px", 
+                            color: "var(--text-tertiary)",
+                            marginTop: '2px',
+                            wordBreak: 'break-word',
+                            lineHeight: '1.2'
+                          }}>Based on: {scenario.historicalBasis}</div>
                         )}
                       </Select.Option>
                     ))}
@@ -1942,13 +1975,32 @@ export default function WorkingEnhancedSimulator() {
                   <Select.OptGroup label="🎲 Monte Carlo - Statistical Risk Modeling">
                     {MONTE_CARLO_SCENARIOS.map((scenario) => (
                       <Select.Option key={scenario.id} value={scenario.id}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          flexWrap: 'wrap',
+                          minWidth: 0,
+                          width: '100%'
+                        }}>
                           {scenario.icon}
-                          <strong>{scenario.name}</strong>
-                          <Tag color="purple">MC</Tag>
+                          <strong style={{ flex: '1 1 auto', minWidth: 0 }}>{scenario.name}</strong>
+                          <Tag color="purple" style={{ flex: '0 0 auto' }}>MC</Tag>
                         </div>
-                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{scenario.description}</div>
-                        <div style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
+                        <div style={{ 
+                          fontSize: "12px", 
+                          color: "var(--text-secondary)",
+                          marginTop: '4px',
+                          wordBreak: 'break-word',
+                          lineHeight: '1.3'
+                        }}>{scenario.description}</div>
+                        <div style={{ 
+                          fontSize: "10px", 
+                          color: "var(--text-tertiary)",
+                          marginTop: '2px',
+                          wordBreak: 'break-word',
+                          lineHeight: '1.2'
+                        }}>
                           {scenario.numSimulations?.toLocaleString()} simulations | {scenario.distributionType} | {((scenario.confidenceLevel || 0) * 100)}% confidence
                         </div>
                       </Select.Option>
@@ -1956,12 +2008,25 @@ export default function WorkingEnhancedSimulator() {
                   </Select.OptGroup>
                   
                   <Select.Option value="custom">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      flexWrap: 'wrap',
+                      minWidth: 0,
+                      width: '100%'
+                    }}>
                       <ExperimentOutlined />
-                      <strong>Custom Scenario</strong>
-                      <Tag color="gray">CUSTOM</Tag>
+                      <strong style={{ flex: '1 1 auto', minWidth: 0 }}>Custom Scenario</strong>
+                      <Tag color="gray" style={{ flex: '0 0 auto' }}>CUSTOM</Tag>
                     </div>
-                    <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Define your own shock parameters</div>
+                    <div style={{ 
+                      fontSize: "12px", 
+                      color: "var(--text-secondary)",
+                      marginTop: '4px',
+                      wordBreak: 'break-word',
+                      lineHeight: '1.3'
+                    }}>Define your own shock parameters</div>
                   </Select.Option>
                 </Select>
               </Col>
