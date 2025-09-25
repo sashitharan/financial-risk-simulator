@@ -754,6 +754,188 @@ p {
   background: var(--bg-secondary);
 }
 
+/* Dark theme table overrides */
+.dark-theme-table .ant-table {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.dark-theme-table .ant-table-thead > tr > th {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark-theme-table .ant-table-tbody > tr > td {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark-theme-table .ant-table-tbody > tr:hover > td {
+  background: var(--bg-tertiary) !important;
+}
+
+.dark-theme-table .ant-table-container {
+  background: var(--bg-secondary) !important;
+}
+
+.dark-theme-table .ant-table-content {
+  background: var(--bg-secondary) !important;
+}
+
+.dark-theme-table .ant-table-header {
+  background: var(--bg-tertiary) !important;
+}
+
+.dark-theme-table .ant-table-body {
+  background: var(--bg-secondary) !important;
+}
+
+/* General dark theme table fixes */
+.dark-theme .ant-table {
+  background: var(--bg-secondary) !important;
+}
+
+.dark-theme .ant-table-thead > tr > th {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.dark-theme .ant-table-tbody > tr > td {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.dark-theme .ant-table-tbody > tr:hover > td {
+  background: var(--bg-tertiary) !important;
+}
+
+/* Dark theme pagination */
+.dark-theme .ant-pagination {
+  color: var(--text-primary) !important;
+}
+
+.dark-theme .ant-pagination-item {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.dark-theme .ant-pagination-item a {
+  color: var(--text-primary) !important;
+}
+
+.dark-theme .ant-pagination-item:hover {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--primary) !important;
+}
+
+.dark-theme .ant-pagination-item:hover a {
+  color: var(--primary) !important;
+}
+
+.dark-theme .ant-pagination-item-active {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+.dark-theme .ant-pagination-item-active a {
+  color: white !important;
+}
+
+.dark-theme .ant-pagination-prev,
+.dark-theme .ant-pagination-next {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark-theme .ant-pagination-prev:hover,
+.dark-theme .ant-pagination-next:hover {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+.dark-theme .ant-pagination-jump-prev,
+.dark-theme .ant-pagination-jump-next {
+  color: var(--text-secondary) !important;
+}
+
+.dark-theme .ant-pagination-options {
+  color: var(--text-primary) !important;
+}
+
+.dark-theme .ant-pagination-options .ant-select {
+  background: var(--bg-secondary) !important;
+}
+
+.dark-theme .ant-pagination-options .ant-select .ant-select-selector {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark-theme .ant-pagination-options .ant-pagination-options-quick-jumper input {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark-theme .ant-pagination-total-text {
+  color: var(--text-secondary) !important;
+}
+
+/* Dark theme Tag component fixes */
+.dark-theme .ant-tag {
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+.dark-theme .ant-tag-blue {
+  background: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+.dark-theme .ant-tag-green {
+  background: var(--success) !important;
+  color: white !important;
+  border-color: var(--success) !important;
+}
+
+.dark-theme .ant-tag-red {
+  background: var(--error) !important;
+  color: white !important;
+  border-color: var(--error) !important;
+}
+
+.dark-theme .ant-tag-orange {
+  background: var(--warning) !important;
+  color: white !important;
+  border-color: var(--warning) !important;
+}
+
+.dark-theme .ant-tag-purple {
+  background: var(--purple) !important;
+  color: white !important;
+  border-color: var(--purple) !important;
+}
+
+.dark-theme .ant-tag-magenta {
+  background: var(--magenta) !important;
+  color: white !important;
+  border-color: var(--magenta) !important;
+}
+
+.dark-theme .ant-tag-default {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
 /* Form Labels */
 .ant-form-item-label > label {
   color: var(--text-primary);

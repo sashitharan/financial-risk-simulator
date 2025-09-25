@@ -753,11 +753,19 @@ export default function WorkingEnhancedSimulator() {
               <Table
                 size="small"
                 dataSource={record.results}
-                pagination={false}
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} results`,
+                  pageSizeOptions: ['5', '10', '20', '50'],
+                  size: 'small'
+                }}
                 style={{
                   backgroundColor: 'var(--bg-secondary)',
                   borderColor: 'var(--border-primary)'
                 }}
+                className="dark-theme-table"
               columns={isBacktesting ? [
                 { 
                   title: 'Date', 
@@ -800,7 +808,14 @@ export default function WorkingEnhancedSimulator() {
                   dataIndex: 'marketCondition', 
                   key: 'marketCondition',
                   render: (value) => (
-                    <Tag color="blue" style={{ color: 'var(--text-primary)' }}>
+                    <Tag 
+                      color={value && value !== 'N/A' ? 'blue' : 'default'} 
+                      style={{ 
+                        color: value && value !== 'N/A' ? 'white' : 'var(--text-primary)',
+                        backgroundColor: value && value !== 'N/A' ? 'var(--primary)' : 'var(--bg-tertiary)',
+                        borderColor: 'var(--border-primary)'
+                      }}
+                    >
                       {value || 'N/A'}
                     </Tag>
                   )
@@ -1739,7 +1754,7 @@ export default function WorkingEnhancedSimulator() {
             padding: 0, 
             height: 'auto', 
             fontWeight: 'bold',
-            color: '#1890ff'
+            color: 'var(--primary)'
           }}
           onClick={() => handleAssetClick(record)}
         >
@@ -1811,7 +1826,7 @@ export default function WorkingEnhancedSimulator() {
             size="small"
             title="Edit Market Data & Run Scenario"
             style={{
-              color: '#1890ff',
+              color: 'var(--primary)',
               fontWeight: 'bold',
               padding: '2px 8px',
               height: 'auto',
@@ -1865,7 +1880,7 @@ export default function WorkingEnhancedSimulator() {
       key: "impact",
       render: (value: number) => (
         <span style={{ 
-          color: value >= 0 ? '#52c41a' : '#ff4d4f',
+          color: value >= 0 ? 'var(--success)' : 'var(--error)',
           fontWeight: 'bold'
         }}>
           {value >= 0 ? '+' : ''}{value.toLocaleString()}
@@ -1922,7 +1937,7 @@ export default function WorkingEnhancedSimulator() {
               title="Total Impact"
               value={totalImpact}
               prefix={totalImpact >= 0 ? <RiseOutlined /> : <FallOutlined />}
-              valueStyle={{ color: totalImpact >= 0 ? '#52c41a' : '#ff4d4f' }}
+              valueStyle={{ color: totalImpact >= 0 ? 'var(--success)' : 'var(--error)' }}
               formatter={(value) => `$${Number(value).toLocaleString()}`}
             />
           </Card>
@@ -1932,7 +1947,7 @@ export default function WorkingEnhancedSimulator() {
             <Statistic
               title="VaR (95%)"
               value={var95}
-              valueStyle={{ color: '#ff4d4f' }}
+              valueStyle={{ color: 'var(--error)' }}
               formatter={(value) => `$${Number(value).toLocaleString()}`}
             />
           </Card>
@@ -1948,7 +1963,7 @@ export default function WorkingEnhancedSimulator() {
               {selectedAsset && (
                 <Badge 
                   count="1" 
-                  style={{ backgroundColor: '#1890ff' }}
+                  style={{ backgroundColor: 'var(--primary)', color: 'white' }}
                   title={`Selected: ${selectedAsset.asset}`}
                 />
               )}
@@ -2065,7 +2080,7 @@ export default function WorkingEnhancedSimulator() {
               {selectedAsset && (
                 <Badge 
                   count="✓" 
-                  style={{ backgroundColor: '#52c41a' }}
+                  style={{ backgroundColor: 'var(--success)', color: 'white' }}
                   title={`Selected: ${selectedAsset.asset}`}
                 />
               )}
@@ -2103,7 +2118,7 @@ export default function WorkingEnhancedSimulator() {
                     <Statistic
                       title="Asset Type"
                       value={selectedAsset.instrumentType.toUpperCase()}
-                      valueStyle={{ color: '#1890ff' }}
+                      valueStyle={{ color: 'var(--primary)' }}
                     />
                   </Col>
                   <Col xs={24} sm={6}>
@@ -2125,7 +2140,7 @@ export default function WorkingEnhancedSimulator() {
                       title="Total Value"
                       value={selectedAsset.price * selectedAsset.quantity}
                       formatter={(value) => `$${value.toLocaleString()}`}
-                      valueStyle={{ color: '#52c41a' }}
+                      valueStyle={{ color: 'var(--success)' }}
                     />
                   </Col>
                 </Row>
@@ -2377,19 +2392,19 @@ export default function WorkingEnhancedSimulator() {
                   style={{
                     background: '#1890ff',
                     border: 'none',
-                    color: '#ffffff',
+                    color: 'var(--text-inverse)',
                     fontWeight: '600'
                   }}
                 >
-                  Run {scenarioScope === 'portfolio' ? 'Portfolio' : 'Asset'} Analysis
+                  {scenarioScope === 'portfolio' ? 'Run Portfolio Analysis' : 'Run Asset Analysis'}
                 </Button>
                 {(scenarioScope === 'single' && !selectedAsset) && (
-                  <div style={{ fontSize: "12px", color: "#ff4d4f", marginTop: "8px", textAlign: "center" }}>
+                  <div style={{ fontSize: "12px", color: "var(--error)", marginTop: "8px", textAlign: "center" }}>
                     Select an asset from Portfolio tab first
                   </div>
                 )}
                 {(selectedScenario.name === "Custom" && !customScenarioName.trim()) && (
-                  <div style={{ fontSize: "12px", color: "#ff4d4f", marginTop: "8px", textAlign: "center" }}>
+                  <div style={{ fontSize: "12px", color: "var(--error)", marginTop: "8px", textAlign: "center" }}>
                     Enter a custom scenario name
                   </div>
                 )}
@@ -2422,12 +2437,12 @@ export default function WorkingEnhancedSimulator() {
                       </Button>
                     </Space>
                     {scenarioScope === 'single' && !selectedAsset && (
-                      <div style={{ fontSize: "12px", color: "#ff4d4f" }}>
+                      <div style={{ fontSize: "12px", color: "var(--error)" }}>
                         Please select an asset from the Portfolio tab first
                       </div>
                     )}
                     {scenarioScope === 'single' && selectedAsset && (
-                      <div style={{ fontSize: "12px", color: "#52c41a" }}>
+                      <div style={{ fontSize: "12px", color: "var(--success)" }}>
                         Selected: {selectedAsset.asset}
                       </div>
                     )}
@@ -2479,7 +2494,7 @@ export default function WorkingEnhancedSimulator() {
                       title="Total Impact"
                       value={totalImpact}
                       prefix={totalImpact >= 0 ? <RiseOutlined /> : <FallOutlined />}
-                      valueStyle={{ color: totalImpact >= 0 ? '#52c41a' : '#ff4d4f' }}
+                      valueStyle={{ color: totalImpact >= 0 ? 'var(--success)' : 'var(--error)' }}
                       formatter={(value) => `$${Number(value).toLocaleString()}`}
                     />
                   </Card>
@@ -2491,7 +2506,7 @@ export default function WorkingEnhancedSimulator() {
                       value={impactPercentage}
                       suffix="%"
                       precision={2}
-                      valueStyle={{ color: impactPercentage >= 0 ? '#52c41a' : '#ff4d4f' }}
+                      valueStyle={{ color: impactPercentage >= 0 ? 'var(--success)' : 'var(--error)' }}
                     />
                   </Card>
                 </Col>
@@ -2501,7 +2516,7 @@ export default function WorkingEnhancedSimulator() {
                       title="VaR (95%)"
                       value={var95}
                       formatter={(value) => `$${Number(value).toLocaleString()}`}
-                      valueStyle={{ color: '#ff4d4f' }}
+                      valueStyle={{ color: 'var(--error)' }}
                     />
                   </Card>
                 </Col>
@@ -2511,7 +2526,7 @@ export default function WorkingEnhancedSimulator() {
                       title="Max Loss"
                       value={maxLoss}
                       formatter={(value) => `$${Number(value).toLocaleString()}`}
-                      valueStyle={{ color: '#ff4d4f' }}
+                      valueStyle={{ color: 'var(--error)' }}
                     />
                   </Card>
                 </Col>
@@ -2546,7 +2561,7 @@ export default function WorkingEnhancedSimulator() {
                 <div style={{ 
                   fontSize: "1.8rem", 
                   fontWeight: "bold",
-                  color: totalImpact >= 0 ? '#52c41a' : '#ff4d4f',
+                  color: totalImpact >= 0 ? 'var(--success)' : 'var(--error)',
                   marginBottom: "8px"
                 }}>
                   Total Portfolio Impact: {totalImpact >= 0 ? '+' : ''}${totalImpact.toLocaleString()}
@@ -2603,26 +2618,26 @@ export default function WorkingEnhancedSimulator() {
                       title="Value at Risk (VaR) 95%"
                       value={var95}
                       formatter={(value) => `$${Number(value).toLocaleString()}`}
-                      valueStyle={{ color: '#ff4d4f' }}
+                      valueStyle={{ color: 'var(--error)' }}
                     />
                     <Statistic
                       title="Expected Shortfall (ES) 95%"
                       value={var95 * 1.2} // Simplified ES calculation
                       formatter={(value) => `$${Number(value).toLocaleString()}`}
-                      valueStyle={{ color: '#ff7875' }}
+                      valueStyle={{ color: 'var(--error-light)' }}
                     />
                     <Statistic
                       title="Maximum Drawdown"
                       value={maxLoss}
                       formatter={(value) => `$${Number(value).toLocaleString()}`}
-                      valueStyle={{ color: '#ff4d4f' }}
+                      valueStyle={{ color: 'var(--error)' }}
                     />
                     <Statistic
                       title="Portfolio PnL"
                       value={totalImpact}
                       formatter={(value) => `$${Number(value).toLocaleString()}`}
                       valueStyle={{ 
-                        color: totalImpact >= 0 ? '#52c41a' : '#ff4d4f' 
+                        color: totalImpact >= 0 ? 'var(--success)' : 'var(--error)' 
                       }}
                     />
                   </Space>
@@ -3049,7 +3064,7 @@ export default function WorkingEnhancedSimulator() {
                         title="Max Loss"
                         value={summary.maxLoss}
                         formatter={(value) => `$${Number(value).toLocaleString()}`}
-                        valueStyle={{ color: '#ff4d4f' }}
+                        valueStyle={{ color: 'var(--error)' }}
                       />
                     </Col>
                     <Col xs={24} sm={6}>
@@ -3057,7 +3072,7 @@ export default function WorkingEnhancedSimulator() {
                         title="KO Events"
                         value={summary.koEvents}
                         suffix={`/${summary.totalDays} days`}
-                        valueStyle={{ color: '#1890ff' }}
+                        valueStyle={{ color: 'var(--primary)' }}
                       />
                     </Col>
                     <Col xs={24} sm={6}>
@@ -3065,7 +3080,7 @@ export default function WorkingEnhancedSimulator() {
                         title="KI Events"
                         value={summary.kiEvents}
                         suffix={`/${summary.totalDays} days`}
-                        valueStyle={{ color: '#fa8c16' }}
+                        valueStyle={{ color: 'var(--warning)' }}
                       />
                     </Col>
                   </Row>
@@ -3103,9 +3118,9 @@ export default function WorkingEnhancedSimulator() {
           <Card 
             title={
               <Space>
-                <InfoCircleOutlined style={{ color: '#1890ff' }} />
+                <InfoCircleOutlined style={{ color: 'var(--primary)' }} />
                 <span>Simulation Assumptions & Methodology</span>
-                <Badge count="8" style={{ backgroundColor: '#52c41a' }} />
+                <Badge count="8" style={{ backgroundColor: 'var(--success)', color: 'white' }} />
               </Space>
             }
             style={{ marginBottom: "24px" }}
@@ -3118,7 +3133,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'market-data',
                   label: (
                     <Space>
-                      <Tag color="blue">Market Data</Tag>
+                      <Tag style={{ backgroundColor: '#1890ff', color: 'white', border: 'none' }}>Market Data</Tag>
                       <span>Real-time pricing and volatility surfaces</span>
                     </Space>
                   ),
@@ -3146,7 +3161,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'risk-factors',
                   label: (
                     <Space>
-                      <Tag color="orange">Risk Factors</Tag>
+                      <Tag style={{ backgroundColor: '#fa8c16', color: 'white', border: 'none' }}>Risk Factors</Tag>
                       <span>Greeks and sensitivity assumptions</span>
                     </Space>
                   ),
@@ -3174,7 +3189,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'scenario-methodology',
                   label: (
                     <Space>
-                      <Tag color="red">Scenario Methodology</Tag>
+                      <Tag style={{ backgroundColor: '#f5222d', color: 'white', border: 'none' }}>Scenario Methodology</Tag>
                       <span>Shock application and calculation logic</span>
                     </Space>
                   ),
@@ -3222,7 +3237,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'scenario-history',
                   label: (
                     <Space>
-                      <Tag color="magenta">Scenario History & Audit</Tag>
+                      <Tag style={{ backgroundColor: '#eb2f96', color: 'white', border: 'none' }}>Scenario History & Audit</Tag>
                       <span>Comprehensive execution tracking and audit trail</span>
                     </Space>
                   ),
@@ -3309,7 +3324,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'manual-scenarios',
                   label: (
                     <Space>
-                      <Tag color="geekblue">Manual Scenario Editing</Tag>
+                      <Tag style={{ backgroundColor: '#1890ff', color: 'white', border: 'none' }}>Manual Scenario Editing</Tag>
                       <span>Interactive market data modification and custom scenarios</span>
                     </Space>
                   ),
@@ -3396,7 +3411,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'calculation-formulas',
                   label: (
                     <Space>
-                      <Tag color="purple">Calculation Formulas</Tag>
+                      <Tag style={{ backgroundColor: '#722ed1', color: 'white', border: 'none' }}>Calculation Formulas</Tag>
                       <span>Mathematical models and equations</span>
                     </Space>
                   ),
@@ -3427,7 +3442,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'backtesting-config',
                   label: (
                     <Space>
-                      <Tag color="cyan">Backtesting Configuration</Tag>
+                      <Tag style={{ backgroundColor: '#13c2c2', color: 'white', border: 'none' }}>Backtesting Configuration</Tag>
                       <span>Historical scenario replay and lifecycle elements</span>
                     </Space>
                   ),
@@ -3573,7 +3588,7 @@ export default function WorkingEnhancedSimulator() {
               {scenarioHistory.length > 0 && (
                 <Badge 
                   count={scenarioHistory.length} 
-                  style={{ backgroundColor: '#52c41a' }}
+                  style={{ backgroundColor: 'var(--success)', color: 'white' }}
                   title={`${scenarioHistory.length} executed scenarios`}
                 />
               )}
@@ -3657,7 +3672,7 @@ export default function WorkingEnhancedSimulator() {
                         title="Total Executions"
                         value={scenarioHistory.length}
                         prefix={<PlayCircleOutlined />}
-                        valueStyle={{ color: '#1890ff' }}
+                        valueStyle={{ color: 'var(--primary)' }}
                       />
                     </Col>
                     <Col span={6}>
@@ -3665,7 +3680,7 @@ export default function WorkingEnhancedSimulator() {
                         title="This Week"
                         value={getWeeklyExecutions()}
                         prefix={<CalendarOutlined />}
-                        valueStyle={{ color: '#52c41a' }}
+                        valueStyle={{ color: 'var(--success)' }}
                       />
                     </Col>
                     <Col span={6}>
@@ -3773,21 +3788,119 @@ export default function WorkingEnhancedSimulator() {
                                   {record.results && record.results.length > 0 ? (
                                     <Table
                                       size="small"
-                                      dataSource={record.results.slice(0, 5)}
-                                      pagination={false}
+                                      dataSource={record.results}
+                                      pagination={{
+                                        pageSize: 5,
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} results`,
+                                        pageSizeOptions: ['3', '5', '10', '20'],
+                                        size: 'small'
+                                      }}
+                                      style={{
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        borderColor: 'var(--border-primary)'
+                                      }}
+                                      className="dark-theme-table"
                                       columns={isBacktesting ? [
-                                        { title: 'Date', dataIndex: 'date', key: 'date' },
-                                        { title: 'P&L', dataIndex: 'pnl', key: 'pnl', render: (value) => `$${value ? value.toLocaleString() : '0'}` },
-                                        { title: 'Cumulative P&L', dataIndex: 'cumulativePnl', key: 'cumulativePnl', render: (value) => `$${value ? value.toLocaleString() : '0'}` },
-                                        { title: 'Market Condition', dataIndex: 'marketCondition', key: 'marketCondition' }
+                                        { 
+                                          title: 'Date', 
+                                          dataIndex: 'date', 
+                                          key: 'date',
+                                          render: (value) => (
+                                            <span style={{ color: 'var(--text-primary)' }}>
+                                              {value || 'N/A'}
+                                            </span>
+                                          )
+                                        },
+                                        { 
+                                          title: 'P&L', 
+                                          dataIndex: 'pnl', 
+                                          key: 'pnl', 
+                                          render: (value) => (
+                                            <span style={{ 
+                                              color: value >= 0 ? 'var(--success)' : 'var(--error)',
+                                              fontWeight: 'bold'
+                                            }}>
+                                              ${value ? Number(value).toLocaleString() : '0'}
+                                            </span>
+                                          )
+                                        },
+                                        { 
+                                          title: 'Cumulative P&L', 
+                                          dataIndex: 'cumulativePnl', 
+                                          key: 'cumulativePnl', 
+                                          render: (value) => (
+                                            <span style={{ 
+                                              color: value >= 0 ? 'var(--success)' : 'var(--error)',
+                                              fontWeight: 'bold'
+                                            }}>
+                                              ${value ? Number(value).toLocaleString() : '0'}
+                                            </span>
+                                          )
+                                        },
+                                        { 
+                                          title: 'Market Condition', 
+                                          dataIndex: 'marketCondition', 
+                                          key: 'marketCondition',
+                                          render: (value) => (
+                                            <Tag 
+                                              color={value && value !== 'N/A' ? 'blue' : 'default'} 
+                                              style={{ 
+                                                color: value && value !== 'N/A' ? 'white' : 'var(--text-primary)',
+                                                backgroundColor: value && value !== 'N/A' ? 'var(--primary)' : 'var(--bg-tertiary)',
+                                                borderColor: 'var(--border-primary)'
+                                              }}
+                                            >
+                                              {value || 'N/A'}
+                                            </Tag>
+                                          )
+                                        }
                                       ] : [
-                                        { title: 'Asset', dataIndex: 'asset', key: 'asset' },
-                                        { title: 'Impact', dataIndex: 'impact', key: 'impact', render: (value) => `$${value ? value.toLocaleString() : '0'}` },
-                                        { title: 'Shock', dataIndex: 'shock', key: 'shock', render: (value) => value ? `${(value * 100).toFixed(2)}%` : 'N/A' }
+                                        { 
+                                          title: 'Asset', 
+                                          dataIndex: 'asset', 
+                                          key: 'asset',
+                                          render: (value) => (
+                                            <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                                              {value || 'N/A'}
+                                            </span>
+                                          )
+                                        },
+                                        { 
+                                          title: 'Impact', 
+                                          dataIndex: 'impact', 
+                                          key: 'impact', 
+                                          render: (value) => (
+                                            <span style={{ 
+                                              color: value >= 0 ? 'var(--success)' : 'var(--error)',
+                                              fontWeight: 'bold'
+                                            }}>
+                                              ${value ? Number(value).toLocaleString() : '0'}
+                                            </span>
+                                          )
+                                        },
+                                        { 
+                                          title: 'Shock', 
+                                          dataIndex: 'shock', 
+                                          key: 'shock', 
+                                          render: (value) => (
+                                            <Tag color={value >= 0 ? 'red' : 'green'}>
+                                              {value ? `${(Number(value) * 100).toFixed(2)}%` : 'N/A'}
+                                            </Tag>
+                                          )
+                                        }
                                       ]}
                                     />
                                   ) : (
-                                    <div style={{ padding: '16px', textAlign: 'center', color: '#999' }}>
+                                    <div style={{ 
+                                      padding: '16px', 
+                                      textAlign: 'center', 
+                                      color: 'var(--text-secondary)',
+                                      backgroundColor: 'var(--bg-secondary)',
+                                      borderRadius: '6px',
+                                      border: '1px solid var(--border-primary)'
+                                    }}>
                                       No results data available
                                     </div>
                                   )}
@@ -4159,10 +4272,11 @@ export default function WorkingEnhancedSimulator() {
                     <strong>Asset:</strong> {selectedAssetData.marketData.symbol || 'N/A'} | 
                     <strong> Currency:</strong> {selectedAssetData.marketData.currency || 'N/A'}
                   </div>
-                  <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #d9d9d9", borderRadius: "6px" }}>
+                  <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid var(--border-primary)", borderRadius: "6px" }}>
                     <Table
                       size="small"
                       pagination={false}
+                      className="dark-theme-table"
                       dataSource={[
                         { key: 'spot', field: 'Spot Price', value: selectedAssetData.marketData.spot, prefix: '$', editable: true },
                         { key: 'bid', field: 'Bid', value: selectedAssetData.marketData.bid, prefix: '$', editable: true },
@@ -4254,7 +4368,7 @@ export default function WorkingEnhancedSimulator() {
                                 <ul>
                                   <li><span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>🔴 Red:</span> High volatility ({'>'}$50)</li>
                                   <li><span style={{ color: '#faad14', fontWeight: 'bold' }}>🟡 Yellow:</span> Medium volatility ($40-$50)</li>
-                                  <li><span style={{ color: '#52c41a', fontWeight: 'bold' }}>🟢 Green:</span> Low volatility ({'<'}$40)</li>
+                                  <li><span style={{ color: 'var(--success)', fontWeight: 'bold' }}>🟢 Green:</span> Low volatility ({'<'}$40)</li>
                                 </ul>
                                 <p><em>Values shown are in USD amounts from the Murex payload.</em></p>
                               </div>
@@ -4264,11 +4378,12 @@ export default function WorkingEnhancedSimulator() {
                         }}
                       />
                     </div>
-                    <div style={{ maxHeight: "500px", overflow: "auto", border: "1px solid #d9d9d9", borderRadius: "6px" }}>
+                    <div style={{ maxHeight: "500px", overflow: "auto", border: "1px solid var(--border-primary)", borderRadius: "6px" }}>
                       <Table
                         size="small"
                         pagination={false}
                         scroll={{ x: 800, y: 400 }}
+                        className="dark-theme-table"
                         dataSource={selectedAssetData.volatility.strikes.map((strike: number, strikeIndex: number) => {
                           const rowData: any = { key: strikeIndex, strike: `$${strike.toFixed(2)}` };
                           selectedAssetData.volatility.maturities.forEach((_: any, maturityIndex: number) => {
@@ -4348,10 +4463,11 @@ export default function WorkingEnhancedSimulator() {
                     <strong>Currency:</strong> {selectedAssetData.interestRates?.currency || 'USD'} | 
                     <strong> Curve Points:</strong> {selectedAssetData.interestRates?.curve?.length || 0}
                   </div>
-                  <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #d9d9d9", borderRadius: "6px" }}>
+                  <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid var(--border-primary)", borderRadius: "6px" }}>
                     <Table
                       size="small"
                       pagination={false}
+                      className="dark-theme-table"
                       dataSource={selectedAssetData.interestRates?.curve?.map((ratePoint: any, index: number) => {
                         const excelDate = ratePoint.date;
                         const date = new Date((excelDate - 25569) * 86400 * 1000);
@@ -4421,10 +4537,11 @@ export default function WorkingEnhancedSimulator() {
                     <strong>Asset:</strong> {selectedAssetData.correlation?.symbol || 'N/A'} | 
                     <strong> Self-Correlation:</strong> {selectedAssetData.correlation?.correlation || '1.00'}
                   </div>
-                  <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #d9d9d9", borderRadius: "6px" }}>
+                  <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid var(--border-primary)", borderRadius: "6px" }}>
                     <Table
                       size="small"
                       pagination={false}
+                      className="dark-theme-table"
                       dataSource={(() => {
                         const currentAsset = selectedAssetData?.correlation?.symbol || 'TSM UN';
                         
@@ -4479,9 +4596,9 @@ export default function WorkingEnhancedSimulator() {
                   </div>
                   <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "8px" }}>
                     <strong>Color Coding:</strong> 
-                    <span style={{ color: '#52c41a', fontWeight: 'bold' }}> Green ({'>'}0.7)</span> | 
+                    <span style={{ color: 'var(--success)', fontWeight: 'bold' }}> Green ({'>'}0.7)</span> | 
                     <span style={{ color: '#faad14', fontWeight: 'bold' }}> Yellow (0.3-0.7)</span> | 
-                    <span style={{ color: '#1890ff', fontWeight: 'bold' }}> Blue (-0.3-0.3)</span> | 
+                    <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}> Blue (-0.3-0.3)</span> | 
                     <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}> Red ({'<'}-0.3)</span>
                   </div>
                 </Card>

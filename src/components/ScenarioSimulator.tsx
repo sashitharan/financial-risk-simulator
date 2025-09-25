@@ -273,18 +273,18 @@ export default function ScenarioSimulator() {
                     fontSize: '10px', 
                     padding: '2px 6px', 
                     borderRadius: '4px',
-                    background: s.category === 'equity' ? '#e6f7ff' : 
-                               s.category === 'rates' ? '#f6ffed' :
-                               s.category === 'fx' ? '#fff7e6' :
-                               s.category === 'volatility' ? '#f9f0ff' :
-                               s.category === 'credit' ? '#fff1f0' :
-                               s.category === 'stress-test' ? '#ff4d4f' : '#f5f5f5',
-                    color: s.category === 'stress-test' ? 'white' : '#666'
+                    background: s.category === 'equity' ? 'var(--info-light, #e6f7ff)' : 
+                               s.category === 'rates' ? 'var(--success-light, #f6ffed)' :
+                               s.category === 'fx' ? 'var(--warning-light, #fff7e6)' :
+                               s.category === 'volatility' ? 'var(--purple-light, #f9f0ff)' :
+                               s.category === 'credit' ? 'var(--error-light, #fff1f0)' :
+                               s.category === 'stress-test' ? 'var(--error)' : 'var(--bg-secondary)',
+                    color: s.category === 'stress-test' ? 'white' : 'var(--text-secondary)'
                   }}>
                     {s.category.toUpperCase()}
                   </span>
                 </div>
-                <div style={{ fontSize: "12px", color: "#666" }}>{s.description}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{s.description}</div>
               </div>
             </Select.Option>
           ))}
@@ -462,19 +462,19 @@ export default function ScenarioSimulator() {
             </Col>
           </Row>
           
-          <div style={{ textAlign: "center", marginTop: "16px", padding: "16px", background: "#f5f5f5", borderRadius: "8px" }}>
+          <div style={{ textAlign: "center", marginTop: "16px", padding: "16px", background: "var(--bg-secondary)", borderRadius: "8px", border: "1px solid var(--border-primary)" }}>
             <div style={{ 
               fontSize: "1.8rem", 
               fontWeight: "bold",
-              color: totalImpact >= 0 ? '#52c41a' : '#ff4d4f',
+              color: totalImpact >= 0 ? 'var(--success)' : 'var(--error)',
               marginBottom: "8px"
             }}>
               Total Portfolio Impact: {totalImpact >= 0 ? '+' : ''}${totalImpact.toLocaleString()}
             </div>
-            <div style={{ fontSize: "1.1rem", color: "#666" }}>
+            <div style={{ fontSize: "1.1rem", color: "var(--text-secondary)" }}>
               Impact as % of Portfolio: {impactPercentage.toFixed(2)}%
             </div>
-            <div style={{ fontSize: "0.9rem", color: "#999", marginTop: "4px" }}>
+            <div style={{ fontSize: "0.9rem", color: "var(--text-tertiary)", marginTop: "4px" }}>
               Scenario Category: <strong>{scenario.category.toUpperCase()}</strong> | 
               Shock Value: <strong>{(scenario.shock * 100).toFixed(1)}%</strong>
             </div>
