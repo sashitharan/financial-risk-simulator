@@ -38,8 +38,6 @@ const AppContent = () => {
           // Component Specific
           borderRadius: 6,
           borderRadiusLG: 8,
-          borderRadiusXL: 12,
-          borderRadiusOuter: 16,
           
           // Typography
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif',
