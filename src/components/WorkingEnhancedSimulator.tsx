@@ -576,9 +576,21 @@ export default function WorkingEnhancedSimulator() {
   };
 
   const viewScenarioDetails = (record: any) => {
+    console.log('View Details clicked for record:', record);
+    
+    if (!record) {
+      console.error('No record provided to viewScenarioDetails');
+      Modal.error({
+        title: 'Error',
+        content: 'No scenario data available to display.',
+      });
+      return;
+    }
+    
     const isBacktesting = record.scenarioType === 'backtesting';
     
-    Modal.info({
+    try {
+      Modal.info({
       title: `Scenario Details: ${record.scenarioName}`,
       width: 900,
       content: (
@@ -648,6 +660,13 @@ export default function WorkingEnhancedSimulator() {
         </div>
       ),
     });
+    } catch (error) {
+      console.error('Error opening scenario details modal:', error);
+      Modal.error({
+        title: 'Error',
+        content: 'Failed to open scenario details. Please try again.',
+      });
+    }
   };
 
   const rerunScenario = (record: any) => {
@@ -3646,7 +3665,17 @@ export default function WorkingEnhancedSimulator() {
                                 <Button 
                                   type="link" 
                                   icon={<EyeOutlined />}
-                                  onClick={() => viewScenarioDetails(record)}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Button clicked for record:', record?.id);
+                                    viewScenarioDetails(record);
+                                  }}
+                                  style={{ 
+                                    color: 'var(--text-primary)',
+                                    border: 'none',
+                                    background: 'transparent'
+                                  }}
                                 />
                               </Tooltip>
                               <Tooltip title="Re-run Scenario">
