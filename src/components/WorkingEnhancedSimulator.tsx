@@ -591,45 +591,149 @@ export default function WorkingEnhancedSimulator() {
     
     try {
       Modal.info({
-      title: `Scenario Details: ${record.scenarioName || 'Unknown'}`,
+      title: (
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px',
+          color: 'var(--text-primary)'
+        }}>
+          <EyeOutlined style={{ color: 'var(--primary)' }} />
+          <span>Scenario Details: {record.scenarioName || 'Unknown'}</span>
+        </div>
+      ),
       width: 900,
+      style: {
+        backgroundColor: 'var(--modal-bg)',
+        color: 'var(--text-primary)'
+      },
       content: (
-        <div>
-          <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Scenario ID">{record.id || 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Execution Time">{record.timestamp ? new Date(record.timestamp).toLocaleString() : 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Scenario Type">{record.scenarioType || 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Scope">{record.scenarioScope || 'N/A'}</Descriptions.Item>
+        <div style={{ 
+          color: 'var(--text-primary)',
+          backgroundColor: 'var(--modal-bg)'
+        }}>
+          <Descriptions 
+            bordered 
+            column={2} 
+            size="small"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              borderColor: 'var(--border-primary)'
+            }}
+          >
+            <Descriptions.Item label="Scenario ID" style={{ color: 'var(--text-primary)' }}>
+              <Tag color="blue">{record.id || 'N/A'}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Execution Time" style={{ color: 'var(--text-primary)' }}>
+              {record.timestamp ? new Date(record.timestamp).toLocaleString() : 'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Scenario Type" style={{ color: 'var(--text-primary)' }}>
+              <Tag color={record.scenarioType === 'backtesting' ? 'magenta' : 'green'}>
+                {record.scenarioType || 'N/A'}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Scope" style={{ color: 'var(--text-primary)' }}>
+              <Tag color="orange">{record.scenarioScope || 'N/A'}</Tag>
+            </Descriptions.Item>
             {!isBacktesting && record.shockValue !== null && record.shockValue !== undefined && (
-              <Descriptions.Item label="Shock Value">{(Number(record.shockValue) * 100).toFixed(2)}%</Descriptions.Item>
+              <Descriptions.Item label="Shock Value" style={{ color: 'var(--text-primary)' }}>
+                <Tag color={Number(record.shockValue) >= 0 ? 'red' : 'green'}>
+                  {(Number(record.shockValue) * 100).toFixed(2)}%
+                </Tag>
+              </Descriptions.Item>
             )}
-            <Descriptions.Item label="Assets Analyzed">{record.assetsAnalyzed || 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Total Impact">{record.totalImpact ? `$${Number(record.totalImpact).toLocaleString()}` : 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Max Loss">{record.maxLoss ? `$${Number(record.maxLoss).toLocaleString()}` : 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Session ID" span={2}>{record.sessionId || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Assets Analyzed" style={{ color: 'var(--text-primary)' }}>
+              <Tag color="blue">{record.assetsAnalyzed || 'N/A'}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Total Impact" style={{ color: 'var(--text-primary)' }}>
+              <span style={{ 
+                color: record.totalImpact >= 0 ? 'var(--success)' : 'var(--error)',
+                fontWeight: 'bold'
+              }}>
+                {record.totalImpact ? `$${Number(record.totalImpact).toLocaleString()}` : 'N/A'}
+              </span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Max Loss" style={{ color: 'var(--text-primary)' }}>
+              <span style={{ 
+                color: 'var(--error)',
+                fontWeight: 'bold'
+              }}>
+                {record.maxLoss ? `$${Number(record.maxLoss).toLocaleString()}` : 'N/A'}
+              </span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Session ID" span={2} style={{ color: 'var(--text-primary)' }}>
+              <code style={{ 
+                backgroundColor: 'var(--bg-tertiary)',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                color: 'var(--text-secondary)'
+              }}>
+                {record.sessionId || 'N/A'}
+              </code>
+            </Descriptions.Item>
           </Descriptions>
           
           {isBacktesting && record.backtestMetadata && (
             <div style={{ marginTop: '16px' }}>
-              <h4>📊 Backtesting Parameters:</h4>
-              <Descriptions bordered column={2} size="small">
-                <Descriptions.Item label="Start Date">{record.backtestMetadata.startDate}</Descriptions.Item>
-                <Descriptions.Item label="End Date">{record.backtestMetadata.endDate}</Descriptions.Item>
-                <Descriptions.Item label="Period">{record.backtestMetadata.period}</Descriptions.Item>
-                <Descriptions.Item label="Custom Scenario">{record.backtestMetadata.isCustomScenario ? 'Yes' : 'No'}</Descriptions.Item>
+              <h4 style={{ 
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                📊 Backtesting Parameters
+              </h4>
+              <Descriptions 
+                bordered 
+                column={2} 
+                size="small"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-primary)'
+                }}
+              >
+                <Descriptions.Item label="Start Date" style={{ color: 'var(--text-primary)' }}>
+                  <Tag color="blue">{record.backtestMetadata.startDate}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="End Date" style={{ color: 'var(--text-primary)' }}>
+                  <Tag color="blue">{record.backtestMetadata.endDate}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Period" style={{ color: 'var(--text-primary)' }}>
+                  <Tag color="green">{record.backtestMetadata.period}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Custom Scenario" style={{ color: 'var(--text-primary)' }}>
+                  <Tag color={record.backtestMetadata.isCustomScenario ? 'orange' : 'default'}>
+                    {record.backtestMetadata.isCustomScenario ? 'Yes' : 'No'}
+                  </Tag>
+                </Descriptions.Item>
                 {record.backtestMetadata.selectedDeal && (
-                  <Descriptions.Item label="Selected Deal">{record.backtestMetadata.selectedDeal}</Descriptions.Item>
+                  <Descriptions.Item label="Selected Deal" style={{ color: 'var(--text-primary)' }}>
+                    <Tag color="purple">{record.backtestMetadata.selectedDeal}</Tag>
+                  </Descriptions.Item>
                 )}
-                <Descriptions.Item label="Market Conditions" span={2}>
+                <Descriptions.Item label="Market Conditions" span={2} style={{ color: 'var(--text-primary)' }}>
                   {record.backtestMetadata.customConditions ? (
-                    <div>
-                      <div>Equity: {record.backtestMetadata.customConditions.equityDecline}%</div>
-                      <div>Volatility: +{record.backtestMetadata.customConditions.volatilitySpike}%</div>
-                      <div>Rates: {record.backtestMetadata.customConditions.rateCuts}bps</div>
-                      <div>Credit: +{record.backtestMetadata.customConditions.creditWidening}bps</div>
+                    <div style={{ 
+                      backgroundColor: 'var(--bg-tertiary)',
+                      padding: '12px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-primary)'
+                    }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <Tag color="red">Equity: {record.backtestMetadata.customConditions.equityDecline}%</Tag>
+                      </div>
+                      <div style={{ marginBottom: '4px' }}>
+                        <Tag color="orange">Volatility: +{record.backtestMetadata.customConditions.volatilitySpike}%</Tag>
+                      </div>
+                      <div style={{ marginBottom: '4px' }}>
+                        <Tag color="blue">Rates: {record.backtestMetadata.customConditions.rateCuts}bps</Tag>
+                      </div>
+                      <div>
+                        <Tag color="purple">Credit: +{record.backtestMetadata.customConditions.creditWidening}bps</Tag>
+                      </div>
                     </div>
                   ) : (
-                    <div>Standard historical scenario conditions</div>
+                    <Tag color="default">Standard historical scenario conditions</Tag>
                   )}
                 </Descriptions.Item>
               </Descriptions>
@@ -637,24 +741,134 @@ export default function WorkingEnhancedSimulator() {
           )}
           
           <div style={{ marginTop: '16px' }}>
-            <h4>Detailed Results:</h4>
+            <h4 style={{ 
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              📋 Detailed Results
+            </h4>
             {record.results && record.results.length > 0 ? (
               <Table
                 size="small"
                 dataSource={record.results}
                 pagination={false}
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-primary)'
+                }}
               columns={isBacktesting ? [
-                { title: 'Date', dataIndex: 'date', key: 'date' },
-                { title: 'P&L', dataIndex: 'pnl', key: 'pnl', render: (value) => value ? `$${Number(value).toLocaleString()}` : 'N/A' },
-                { title: 'Cumulative P&L', dataIndex: 'cumulativePnl', key: 'cumulativePnl', render: (value) => value ? `$${Number(value).toLocaleString()}` : 'N/A' },
-                { title: 'Market Condition', dataIndex: 'marketCondition', key: 'marketCondition' }
+                { 
+                  title: 'Date', 
+                  dataIndex: 'date', 
+                  key: 'date',
+                  render: (value) => (
+                    <span style={{ color: 'var(--text-primary)' }}>
+                      {value || 'N/A'}
+                    </span>
+                  )
+                },
+                { 
+                  title: 'P&L', 
+                  dataIndex: 'pnl', 
+                  key: 'pnl', 
+                  render: (value) => (
+                    <span style={{ 
+                      color: value >= 0 ? 'var(--success)' : 'var(--error)',
+                      fontWeight: 'bold'
+                    }}>
+                      {value ? `$${Number(value).toLocaleString()}` : 'N/A'}
+                    </span>
+                  )
+                },
+                { 
+                  title: 'Cumulative P&L', 
+                  dataIndex: 'cumulativePnl', 
+                  key: 'cumulativePnl', 
+                  render: (value) => (
+                    <span style={{ 
+                      color: value >= 0 ? 'var(--success)' : 'var(--error)',
+                      fontWeight: 'bold'
+                    }}>
+                      {value ? `$${Number(value).toLocaleString()}` : 'N/A'}
+                    </span>
+                  )
+                },
+                { 
+                  title: 'Market Condition', 
+                  dataIndex: 'marketCondition', 
+                  key: 'marketCondition',
+                  render: (value) => (
+                    <Tag color="blue" style={{ color: 'var(--text-primary)' }}>
+                      {value || 'N/A'}
+                    </Tag>
+                  )
+                }
               ] : [
-                { title: 'Asset', dataIndex: 'asset', key: 'asset' },
-                { title: 'Quantity', dataIndex: 'quantity', key: 'quantity' },
-                { title: 'Original Price', dataIndex: 'originalPrice', key: 'originalPrice', render: (value) => value ? `$${Number(value).toFixed(2)}` : 'N/A' },
-                { title: 'New Price', dataIndex: 'newPrice', key: 'newPrice', render: (value) => value ? `$${Number(value).toFixed(2)}` : 'N/A' },
-                { title: 'Shock', dataIndex: 'shock', key: 'shock', render: (value) => value ? `${(Number(value) * 100).toFixed(2)}%` : 'N/A' },
-                { title: 'Impact', dataIndex: 'impact', key: 'impact', render: (value) => value ? `$${Number(value).toLocaleString()}` : 'N/A' }
+                { 
+                  title: 'Asset', 
+                  dataIndex: 'asset', 
+                  key: 'asset',
+                  render: (value) => (
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                      {value || 'N/A'}
+                    </span>
+                  )
+                },
+                { 
+                  title: 'Quantity', 
+                  dataIndex: 'quantity', 
+                  key: 'quantity',
+                  render: (value) => (
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      {value ? Number(value).toLocaleString() : 'N/A'}
+                    </span>
+                  )
+                },
+                { 
+                  title: 'Original Price', 
+                  dataIndex: 'originalPrice', 
+                  key: 'originalPrice', 
+                  render: (value) => (
+                    <span style={{ color: 'var(--text-primary)' }}>
+                      {value ? `$${Number(value).toFixed(2)}` : 'N/A'}
+                    </span>
+                  )
+                },
+                { 
+                  title: 'New Price', 
+                  dataIndex: 'newPrice', 
+                  key: 'newPrice', 
+                  render: (value) => (
+                    <span style={{ color: 'var(--text-primary)' }}>
+                      {value ? `$${Number(value).toFixed(2)}` : 'N/A'}
+                    </span>
+                  )
+                },
+                { 
+                  title: 'Shock', 
+                  dataIndex: 'shock', 
+                  key: 'shock', 
+                  render: (value) => (
+                    <Tag color={value >= 0 ? 'red' : 'green'}>
+                      {value ? `${(Number(value) * 100).toFixed(2)}%` : 'N/A'}
+                    </Tag>
+                  )
+                },
+                { 
+                  title: 'Impact', 
+                  dataIndex: 'impact', 
+                  key: 'impact', 
+                  render: (value) => (
+                    <span style={{ 
+                      color: value >= 0 ? 'var(--success)' : 'var(--error)',
+                      fontWeight: 'bold'
+                    }}>
+                      {value ? `$${Number(value).toLocaleString()}` : 'N/A'}
+                    </span>
+                  )
+                }
               ]}
             />
             ) : (

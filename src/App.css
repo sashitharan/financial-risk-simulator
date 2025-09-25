@@ -705,11 +705,53 @@ p {
 .ant-modal-body {
   color: var(--text-primary);
   padding: 24px;
+  background: var(--modal-bg);
 }
 
 .ant-modal-footer {
   border-top: 1px solid var(--border-primary);
   padding: 16px 24px;
+  background: var(--modal-bg);
+}
+
+/* Dark theme modal enhancements */
+.dark-theme .ant-modal-content {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+}
+
+.dark-theme .ant-modal-header {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.dark-theme .ant-modal-title {
+  color: var(--text-primary);
+}
+
+.dark-theme .ant-modal-body {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.dark-theme .ant-modal-footer {
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-primary);
+}
+
+/* Descriptions component dark theme */
+.dark-theme .ant-descriptions {
+  background: var(--bg-secondary);
+}
+
+.dark-theme .ant-descriptions-item-label {
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+}
+
+.dark-theme .ant-descriptions-item-content {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
 }
 
 /* Form Labels */
