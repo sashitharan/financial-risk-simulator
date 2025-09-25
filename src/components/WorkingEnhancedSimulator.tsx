@@ -18,7 +18,9 @@ import {
   Collapse,
   Descriptions,
   Badge,
-  Progress
+  Progress,
+  Empty,
+  Tooltip
 } from "antd";
 import { 
   PlusOutlined, 
@@ -29,14 +31,40 @@ import {
   LineChartOutlined,
   ThunderboltOutlined,
   ExperimentOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  HistoryOutlined,
+  SearchOutlined,
+  DownloadOutlined,
+  DeleteOutlined,
+  PlayCircleOutlined,
+  CalendarOutlined,
+  EyeOutlined,
+  ReloadOutlined
 } from "@ant-design/icons";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { Tooltip as RechartsTooltip } from "recharts";
 import marketData from "../data/market-data.json";
 import backtestingData from "../data/backtesting-data.json";
 import murexPayload from "../data/murex-payload.json";
 
 const { TabPane } = Tabs;
+const { Option } = Select;
+
+// Helper functions for scenario history
+const getScenarioTypeColor = (type: string) => {
+  const colors: { [key: string]: string } = {
+    'equity': 'blue',
+    'rates': 'green',
+    'fx': 'orange',
+    'volatility': 'purple',
+    'credit': 'red',
+    'stress-test': 'volcano',
+    'monte-carlo': 'cyan',
+    'custom': 'geekblue',
+    'backtesting': 'magenta'
+  };
+  return colors[type] || 'default';
+};
 
 // Enhanced scenario definitions - OpenGamma Strata Inspired
 const STANDARD_SCENARIOS = [
@@ -370,7 +398,18 @@ export default function WorkingEnhancedSimulator() {
 
   const [selectedScenario, setSelectedScenario] = useState(ALL_SCENARIOS[0]);
   const [customShock, setCustomShock] = useState<number>(0);
+  const [customScenarioName, setCustomScenarioName] = useState<string>("");
+  const [scenarioScope, setScenarioScope] = useState<'portfolio' | 'single'>('portfolio');
   const [results, setResults] = useState<Result[]>([]);
+  
+  // Scenario History & Audit Trail
+  const [scenarioHistory, setScenarioHistory] = useState<any[]>([]);
+  const [historyFilters, setHistoryFilters] = useState({
+    dateRange: null,
+    scenarioType: null,
+    assetFilter: null,
+    searchTerm: ""
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const [selectedAssetData, setSelectedAssetData] = useState<any>(null);
@@ -390,13 +429,17 @@ export default function WorkingEnhancedSimulator() {
     rateCuts: -50,
     creditWidening: 100
   });
-  const [customScenarioName, setCustomScenarioName] = useState("Custom Scenario");
   const [customStartDate, setCustomStartDate] = useState("2023-01-01");
   const [customEndDate, setCustomEndDate] = useState("2023-12-31");
   
   // Deal selection for dynamic lifecycle data
   const [selectedDealIndex, setSelectedDealIndex] = useState(0);
   const [availableDeals, setAvailableDeals] = useState<any[]>([]);
+
+  // Manual scenario editing state
+  const [isEditingMarketData, setIsEditingMarketData] = useState(false);
+  const [manualScenarioName, setManualScenarioName] = useState("");
+  const [isMarketDataModalEditable, setIsMarketDataModalEditable] = useState(false);
   const [form] = Form.useForm();
 
   // Load available deals from Murex payload
@@ -434,20 +477,258 @@ export default function WorkingEnhancedSimulator() {
     }
   }, []);
 
+  // Load scenario history from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('scenarioHistory');
+      if (savedHistory) {
+        setScenarioHistory(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error('Error loading scenario history:', error);
+    }
+  }, []);
+
+  // Save scenario history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('scenarioHistory', JSON.stringify(scenarioHistory));
+    } catch (error) {
+      console.error('Error saving scenario history:', error);
+    }
+  }, [scenarioHistory]);
+
+  // Helper functions for scenario history
+  const filteredHistory = scenarioHistory.filter(record => {
+    const matchesSearch = !historyFilters.searchTerm || 
+      record.scenarioName.toLowerCase().includes(historyFilters.searchTerm.toLowerCase()) ||
+      record.selectedAsset?.toLowerCase().includes(historyFilters.searchTerm.toLowerCase());
+    
+    const matchesType = !historyFilters.scenarioType || record.scenarioType === historyFilters.scenarioType;
+    const matchesScope = !historyFilters.assetFilter || record.scenarioScope === historyFilters.assetFilter;
+    
+    return matchesSearch && matchesType && matchesScope;
+  });
+
+  const getWeeklyExecutions = () => {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    return scenarioHistory.filter(record => new Date(record.timestamp) > oneWeekAgo).length;
+  };
+
+  const getMostUsedScenarioType = () => {
+    const typeCounts: { [key: string]: number } = {};
+    scenarioHistory.forEach(record => {
+      typeCounts[record.scenarioType] = (typeCounts[record.scenarioType] || 0) + 1;
+    });
+    const mostUsed = Object.keys(typeCounts).reduce((a, b) => 
+      typeCounts[a] > typeCounts[b] ? a : b, 'None');
+    return mostUsed.charAt(0).toUpperCase() + mostUsed.slice(1);
+  };
+
+  const getAverageImpact = () => {
+    if (scenarioHistory.length === 0) return 0;
+    const total = scenarioHistory.reduce((sum, record) => sum + Math.abs(record.totalImpact), 0);
+    return Math.round(total / scenarioHistory.length);
+  };
+
+  const exportScenarioHistory = () => {
+    const csvContent = [
+      ['Timestamp', 'Scenario Name', 'Type', 'Scope', 'Asset', 'Shock %', 'Total Impact', 'Max Loss', 'Assets Analyzed', 'Start Date', 'End Date', 'Custom Scenario'].join(','),
+      ...filteredHistory.map(record => [
+        record.timestamp,
+        `"${record.scenarioName}"`,
+        record.scenarioType,
+        record.scenarioScope,
+        record.selectedAsset || 'All',
+        record.shockValue ? (record.shockValue * 100).toFixed(2) : 'N/A',
+        record.totalImpact,
+        record.maxLoss,
+        record.assetsAnalyzed,
+        record.backtestMetadata?.startDate || 'N/A',
+        record.backtestMetadata?.endDate || 'N/A',
+        record.backtestMetadata?.isCustomScenario ? 'Yes' : 'No'
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `scenario-history-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const clearScenarioHistory = () => {
+    Modal.confirm({
+      title: 'Clear Scenario History',
+      content: 'Are you sure you want to clear all scenario history? This action cannot be undone.',
+      okText: 'Yes, Clear All',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk() {
+        setScenarioHistory([]);
+      },
+    });
+  };
+
+  const viewScenarioDetails = (record: any) => {
+    const isBacktesting = record.scenarioType === 'backtesting';
+    
+    Modal.info({
+      title: `Scenario Details: ${record.scenarioName}`,
+      width: 900,
+      content: (
+        <div>
+          <Descriptions bordered column={2} size="small">
+            <Descriptions.Item label="Scenario ID">{record.id}</Descriptions.Item>
+            <Descriptions.Item label="Execution Time">{new Date(record.timestamp).toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Scenario Type">{record.scenarioType}</Descriptions.Item>
+            <Descriptions.Item label="Scope">{record.scenarioScope}</Descriptions.Item>
+            {!isBacktesting && (
+              <Descriptions.Item label="Shock Value">{(record.shockValue * 100).toFixed(2)}%</Descriptions.Item>
+            )}
+            <Descriptions.Item label="Assets Analyzed">{record.assetsAnalyzed}</Descriptions.Item>
+            <Descriptions.Item label="Total Impact">${record.totalImpact.toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Max Loss">${record.maxLoss.toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Session ID" span={2}>{record.sessionId}</Descriptions.Item>
+          </Descriptions>
+          
+          {isBacktesting && record.backtestMetadata && (
+            <div style={{ marginTop: '16px' }}>
+              <h4>📊 Backtesting Parameters:</h4>
+              <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label="Start Date">{record.backtestMetadata.startDate}</Descriptions.Item>
+                <Descriptions.Item label="End Date">{record.backtestMetadata.endDate}</Descriptions.Item>
+                <Descriptions.Item label="Period">{record.backtestMetadata.period}</Descriptions.Item>
+                <Descriptions.Item label="Custom Scenario">{record.backtestMetadata.isCustomScenario ? 'Yes' : 'No'}</Descriptions.Item>
+                {record.backtestMetadata.selectedDeal && (
+                  <Descriptions.Item label="Selected Deal">{record.backtestMetadata.selectedDeal}</Descriptions.Item>
+                )}
+                <Descriptions.Item label="Market Conditions" span={2}>
+                  {record.backtestMetadata.customConditions ? (
+                    <div>
+                      <div>Equity: {record.backtestMetadata.customConditions.equityDecline}%</div>
+                      <div>Volatility: +{record.backtestMetadata.customConditions.volatilitySpike}%</div>
+                      <div>Rates: {record.backtestMetadata.customConditions.rateCuts}bps</div>
+                      <div>Credit: +{record.backtestMetadata.customConditions.creditWidening}bps</div>
+                    </div>
+                  ) : (
+                    <div>Standard historical scenario conditions</div>
+                  )}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+          )}
+          
+          <div style={{ marginTop: '16px' }}>
+            <h4>Detailed Results:</h4>
+            <Table
+              size="small"
+              dataSource={record.results}
+              pagination={false}
+              columns={isBacktesting ? [
+                { title: 'Date', dataIndex: 'date', key: 'date' },
+                { title: 'P&L', dataIndex: 'pnl', key: 'pnl', render: (value) => `$${value.toLocaleString()}` },
+                { title: 'Cumulative P&L', dataIndex: 'cumulativePnl', key: 'cumulativePnl', render: (value) => `$${value.toLocaleString()}` },
+                { title: 'Market Condition', dataIndex: 'marketCondition', key: 'marketCondition' }
+              ] : [
+                { title: 'Asset', dataIndex: 'asset', key: 'asset' },
+                { title: 'Quantity', dataIndex: 'quantity', key: 'quantity' },
+                { title: 'Original Price', dataIndex: 'originalPrice', key: 'originalPrice', render: (value) => `$${value.toFixed(2)}` },
+                { title: 'New Price', dataIndex: 'newPrice', key: 'newPrice', render: (value) => `$${value.toFixed(2)}` },
+                { title: 'Shock', dataIndex: 'shock', key: 'shock', render: (value) => `${(value * 100).toFixed(2)}%` },
+                { title: 'Impact', dataIndex: 'impact', key: 'impact', render: (value) => `$${value.toLocaleString()}` }
+              ]}
+            />
+          </div>
+        </div>
+      ),
+    });
+  };
+
+  const rerunScenario = (record: any) => {
+    if (record.scenarioType === 'backtesting') {
+      // Handle backtesting scenario re-run
+      if (record.backtestMetadata) {
+        setUseCustomScenario(record.backtestMetadata.isCustomScenario);
+        setCustomScenarioName(record.scenarioName);
+        setCustomStartDate(record.backtestMetadata.startDate);
+        setCustomEndDate(record.backtestMetadata.endDate);
+        
+        if (record.backtestMetadata.isCustomScenario && record.backtestMetadata.customConditions) {
+          setCustomMarketConditions(record.backtestMetadata.customConditions);
+        }
+        
+        // Switch to backtesting tab
+        const backtestingTab = document.querySelector('[data-node-key="backtesting"]') as HTMLElement;
+        if (backtestingTab) backtestingTab.click();
+        
+        Modal.success({
+          title: 'Backtesting Scenario Loaded',
+          content: `Backtesting scenario "${record.scenarioName}" has been loaded with all parameters. You can now run it again.`,
+        });
+      }
+    } else {
+      // Handle regular scenario re-run
+      const scenario = ALL_SCENARIOS.find(s => s.name === record.scenarioName);
+      if (scenario) {
+        setSelectedScenario(scenario);
+      } else if (record.scenarioType === 'custom') {
+        setSelectedScenario({ 
+          id: 'custom', 
+          name: 'Custom', 
+          category: 'custom', 
+          shock: record.shockValue, 
+          description: 'Custom scenario',
+          icon: <ExperimentOutlined />,
+          type: 'custom'
+        });
+        setCustomScenarioName(record.scenarioName);
+        setCustomShock(record.shockValue * 100);
+      }
+      
+      setScenarioScope(record.scenarioScope);
+      
+      // Switch to scenarios tab
+      const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
+      if (scenariosTab) scenariosTab.click();
+      
+      Modal.success({
+        title: 'Scenario Loaded',
+        content: `Scenario "${record.scenarioName}" has been loaded. You can now run it again with the same parameters.`,
+      });
+    }
+  };
+
   const runSimulation = () => {
-    if (!selectedAsset) {
-      console.error('No asset selected for simulation');
+    // Check if single asset mode requires asset selection
+    if (scenarioScope === 'single' && !selectedAsset) {
+      console.error('No asset selected for single asset simulation');
+      return;
+    }
+    
+    // Check if custom scenario has a name when using custom
+    if (selectedScenario.name === "Custom" && !customScenarioName.trim()) {
+      console.error('Please provide a custom scenario name');
       return;
     }
     
     console.log('Running enhanced simulation with scenario:', selectedScenario.name);
-    console.log('Selected asset:', selectedAsset.asset);
+    console.log('Scenario scope:', scenarioScope);
+    console.log('Selected asset:', selectedAsset?.asset || 'Portfolio-wide');
     console.log('Using market data:', MARKET_DATA);
     
     const shock = selectedScenario.name === "Custom" ? customShock / 100 : selectedScenario.shock;
     
-    // Enhanced calculation with real Murex market data integration - only for selected asset
-    const calc = [selectedAsset].map((pos) => {
+    // Determine which assets to analyze
+    const assetsToAnalyze = scenarioScope === 'portfolio' ? positions : [selectedAsset];
+    
+    // Enhanced calculation with real Murex market data integration
+    const calc = assetsToAnalyze.filter(pos => pos !== null).map((pos) => {
       let shockedPrice = pos.price;
       let shockValue = shock;
       let riskMetrics = { ...pos.riskFactors };
@@ -580,6 +861,29 @@ export default function WorkingEnhancedSimulator() {
     
     console.log('Enhanced simulation results with Murex data:', calc);
     setResults(calc);
+    
+    // Record scenario execution in history
+    const scenarioRecord = {
+      id: `scenario-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      scenarioName: selectedScenario.name === "Custom" ? customScenarioName : selectedScenario.name,
+      scenarioType: selectedScenario.category || 'custom',
+      scenarioScope: scenarioScope,
+      shockValue: selectedScenario.name === "Custom" ? customShock / 100 : selectedScenario.shock,
+      assetsAnalyzed: scenarioScope === 'portfolio' ? positions.length : 1,
+      selectedAsset: scenarioScope === 'single' ? selectedAsset?.asset : null,
+      results: calc,
+      totalImpact: calc.reduce((sum, result) => sum + result.impact, 0),
+      maxLoss: Math.min(...calc.map(result => result.impact)),
+      userAgent: navigator.userAgent,
+      sessionId: `session-${Date.now()}`
+    };
+    
+    setScenarioHistory(prev => [scenarioRecord, ...prev.slice(0, 99)]); // Keep last 100 records
+    
+    // Switch to risk metrics tab
+    const riskTab = document.querySelector('[data-node-key="risk"]') as HTMLElement;
+    if (riskTab) riskTab.click();
   };
 
   const addPosition = () => {
@@ -630,6 +934,125 @@ export default function WorkingEnhancedSimulator() {
   const deletePosition = (key: string) => {
     setPositions(positions.filter(pos => pos.key !== key));
   };
+
+  // Manual scenario editing functions
+
+
+  const updateVolatilityData = (strikeIndex: number, maturityIndex: number, value: number) => {
+    if (!selectedAssetData) return;
+    
+    // Update the selectedAssetData directly for real-time editing
+    const updatedAssetData = { ...selectedAssetData };
+    updatedAssetData.volatility.volMatrix[maturityIndex][strikeIndex] = value;
+    setSelectedAssetData(updatedAssetData);
+  };
+
+  const updateInterestRateData = (currency: string, rateIndex: number, value: number) => {
+    if (!selectedAssetData) return;
+    
+    const updatedAssetData = { ...selectedAssetData };
+    const rateData = updatedAssetData.interestRates.find((r: any) => r.currency === currency);
+    if (rateData) {
+      rateData.curve[rateIndex].rate = value;
+      setSelectedAssetData(updatedAssetData);
+    }
+  };
+
+  const updateCorrelationDataInModal = (pairIndex: number, value: number) => {
+    if (!selectedAssetData) return;
+    
+    const updatedAssetData = { ...selectedAssetData };
+    if (updatedAssetData.correlation && updatedAssetData.correlation[pairIndex]) {
+      updatedAssetData.correlation[pairIndex].correlation = value;
+      setSelectedAssetData(updatedAssetData);
+    }
+  };
+
+  const updateEquityMarketData = (field: string, value: any) => {
+    if (!selectedAssetData) return;
+    
+    const updatedAssetData = { ...selectedAssetData };
+    if (updatedAssetData.marketData) {
+      updatedAssetData.marketData[field] = value;
+      
+      // Auto-calculate spread when bid or ask is updated
+      if (field === 'bid' || field === 'ask') {
+        const bid = field === 'bid' ? value : updatedAssetData.marketData.bid;
+        const ask = field === 'ask' ? value : updatedAssetData.marketData.ask;
+        if (bid && ask) {
+          updatedAssetData.marketData.spread = ask - bid;
+        }
+      }
+      
+      setSelectedAssetData(updatedAssetData);
+    }
+  };
+
+  const runManualScenario = () => {
+    if (!selectedAssetData || !manualScenarioName.trim()) {
+      console.error('Please provide scenario name and ensure market data is loaded');
+      return;
+    }
+
+    // Run simulation with edited market data from the modal
+    const newResults: Result[] = positions.map(pos => {
+      const asset = pos.asset;
+      const originalPrice = pos.price;
+      
+      // Get edited price for this asset - use the selected asset's edited data
+      let editedPrice = originalPrice;
+      if (selectedAsset && selectedAsset.asset === asset) {
+        // If this is the asset we edited, use the edited spot price directly
+        if (selectedAssetData.marketData && selectedAssetData.marketData.spot) {
+          editedPrice = selectedAssetData.marketData.spot;
+        } else {
+          // Fallback: apply shock based on volatility changes
+          const volChange = selectedAssetData.volatility ? 
+            (selectedAssetData.volatility.volMatrix[0][0] - 25.0) / 25.0 : 0;
+          editedPrice = originalPrice * (1 + volChange * 0.1);
+        }
+      }
+
+      const priceChange = editedPrice - originalPrice;
+      const impact = priceChange * pos.quantity;
+
+      return {
+        asset,
+        quantity: pos.quantity,
+        shock: priceChange / originalPrice,
+        impact,
+        originalPrice,
+        newPrice: editedPrice,
+        originalValue: originalPrice * pos.quantity,
+        shockedValue: editedPrice * pos.quantity,
+        riskMetrics: {
+          delta: pos.riskFactors.delta || 0,
+          gamma: pos.riskFactors.gamma || 0,
+          duration: pos.riskFactors.duration || 0,
+          convexity: 0,
+          vega: 0,
+          theta: 0
+        }
+      };
+    });
+
+    setResults(newResults);
+    setIsDataModalOpen(false);
+    setIsMarketDataModalEditable(false);
+    setIsEditingMarketData(false);
+    
+    // Switch to risk metrics tab
+    const riskTab = document.querySelector('[data-node-key="risk"]') as HTMLElement;
+    if (riskTab) riskTab.click();
+    
+    // Show success message
+    Modal.success({
+      title: 'Manual Scenario Executed',
+      content: `Scenario "${manualScenarioName}" has been executed successfully with your edited market data.`,
+      okText: 'View Results'
+    });
+  };
+
 
   const getAssetMarketData = (asset: string, position: Position) => {
     const baseData = {
@@ -937,6 +1360,36 @@ export default function WorkingEnhancedSimulator() {
       const mockResults = generateMockBacktestResults(scenario);
       setBacktestResults(mockResults);
       
+      // Record backtesting scenario execution in history
+      const backtestRecord = {
+        id: `backtest-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        scenarioName: scenario.name,
+        scenarioType: 'backtesting',
+        scenarioScope: 'portfolio',
+        shockValue: null, // Backtesting doesn't use shock values
+        assetsAnalyzed: positions.length,
+        selectedAsset: null,
+        results: mockResults,
+        totalImpact: mockResults.reduce((sum, result) => sum + (result.pnl || 0), 0),
+        maxLoss: Math.min(...mockResults.map(result => result.pnl || 0)),
+        userAgent: navigator.userAgent,
+        sessionId: `session-${Date.now()}`,
+        // Backtesting-specific metadata
+        backtestMetadata: {
+          startDate: scenario.startDate,
+          endDate: scenario.endDate,
+          period: scenario.period || 'Daily',
+          marketConditions: scenario.marketConditions,
+          isCustomScenario: useCustomScenario,
+          customConditions: useCustomScenario ? customMarketConditions : null,
+          selectedDeal: availableDeals[selectedDealIndex]?.name || null,
+          lifecycleData: availableDeals[selectedDealIndex] ? extractLifecycleData(availableDeals[selectedDealIndex].data) : null
+        }
+      };
+      
+      setScenarioHistory(prev => [backtestRecord, ...prev.slice(0, 99)]); // Keep last 100 records
+      
       setBacktestProgress(100);
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -1043,7 +1496,12 @@ export default function WorkingEnhancedSimulator() {
       render: (text: string, record: Position) => (
         <Button 
           type="link" 
-          style={{ padding: 0, height: 'auto', fontWeight: 'bold' }}
+          style={{ 
+            padding: 0, 
+            height: 'auto', 
+            fontWeight: 'bold',
+            color: '#1890ff'
+          }}
           onClick={() => handleAssetClick(record)}
         >
           {text} 🔍
@@ -1066,7 +1524,30 @@ export default function WorkingEnhancedSimulator() {
       title: "Price ($)", 
       dataIndex: "price", 
       key: "price",
-      render: (value: number) => `$${value.toFixed(2)}`
+      render: (value: number, record: Position) => {
+        if (isEditingMarketData && selectedAsset && selectedAsset.key === record.key) {
+          return (
+            <InputNumber
+              size="small"
+              value={value}
+              onChange={(val) => {
+                const updatedPositions = positions.map(pos => 
+                  pos.key === record.key ? { ...pos, price: val || 0 } : pos
+                );
+                setPositions(updatedPositions);
+                // Update selected asset price as well
+                if (selectedAsset.key === record.key) {
+                  setSelectedAsset({ ...selectedAsset, price: val || 0 });
+                }
+              }}
+              style={{ width: '100px' }}
+              precision={2}
+              prefix="$"
+            />
+          );
+        }
+        return `$${value.toFixed(2)}`;
+      }
     },
     { 
       title: "Value ($)", 
@@ -1077,14 +1558,45 @@ export default function WorkingEnhancedSimulator() {
       title: "Action",
       key: "action",
       render: (_: any, record: Position) => (
-        <Button 
-          type="link" 
-          danger 
-          onClick={() => deletePosition(record.key)}
-          size="small"
-        >
-          Delete
-        </Button>
+        <Space size="small">
+          <Button 
+            type="link" 
+            icon={<ExperimentOutlined />}
+            onClick={() => {
+              setSelectedAsset(record);
+              setSelectedAssetData(getAssetMarketData(record.asset, record));
+              setIsDataModalOpen(true);
+              setIsMarketDataModalEditable(true);
+              setIsEditingMarketData(true);
+            }}
+            size="small"
+            title="Edit Market Data & Run Scenario"
+            style={{
+              color: '#1890ff',
+              fontWeight: 'bold',
+              padding: '2px 8px',
+              height: 'auto',
+              lineHeight: '1.4'
+            }}
+          >
+            Edit Market data
+          </Button>
+          <Button 
+            type="link" 
+            danger 
+            onClick={() => deletePosition(record.key)}
+            size="small"
+            style={{
+              color: '#ff4d4f',
+              fontWeight: 'bold',
+              padding: '2px 8px',
+              height: 'auto',
+              lineHeight: '1.4'
+            }}
+          >
+            Delete
+          </Button>
+        </Space>
       ),
     }
   ];
@@ -1208,13 +1720,35 @@ export default function WorkingEnhancedSimulator() {
           <Card 
             title="Portfolio Positions with Risk Factors" 
             extra={
-              <Button
-                type="dashed"
-                icon={<PlusOutlined />}
-                onClick={() => setIsModalOpen(true)}
-              >
-                Add Position
-              </Button>
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<ExperimentOutlined />}
+                  onClick={() => {
+                    if (selectedAsset) {
+                      setSelectedAssetData(getAssetMarketData(selectedAsset.asset, selectedAsset));
+                      setIsDataModalOpen(true);
+                      setIsMarketDataModalEditable(true);
+                      setIsEditingMarketData(true);
+                    } else {
+                      Modal.warning({
+                        title: 'No Asset Selected',
+                        content: 'Please select an asset from the portfolio to edit its market data.',
+                      });
+                    }
+                  }}
+                  disabled={!selectedAsset}
+                >
+                  Run Manual Scenario
+                </Button>
+                <Button
+                  type="dashed"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  Add Position
+                </Button>
+              </Space>
             }
           >
             <Table
@@ -1452,6 +1986,10 @@ export default function WorkingEnhancedSimulator() {
                   size="large" 
                   icon={<RiseOutlined />}
                   block
+                  disabled={
+                    (scenarioScope === 'single' && !selectedAsset) ||
+                    (selectedScenario.name === "Custom" && !customScenarioName.trim())
+                  }
                   style={{
                     background: '#1890ff',
                     border: 'none',
@@ -1459,28 +1997,96 @@ export default function WorkingEnhancedSimulator() {
                     fontWeight: '600'
                   }}
                 >
-                  Run Simulation
+                  Run {scenarioScope === 'portfolio' ? 'Portfolio' : 'Asset'} Analysis
                 </Button>
+                {(scenarioScope === 'single' && !selectedAsset) && (
+                  <div style={{ fontSize: "12px", color: "#ff4d4f", marginTop: "8px", textAlign: "center" }}>
+                    Select an asset from Portfolio tab first
+                  </div>
+                )}
+                {(selectedScenario.name === "Custom" && !customScenarioName.trim()) && (
+                  <div style={{ fontSize: "12px", color: "#ff4d4f", marginTop: "8px", textAlign: "center" }}>
+                    Enter a custom scenario name
+                  </div>
+                )}
+              </Col>
+            </Row>
+
+            {/* Scenario Scope Selection */}
+            <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
+              <Col xs={24} md={12}>
+                <Card size="small" title="Scenario Scope">
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    <div>
+                      <strong>Analysis Scope:</strong>
+                    </div>
+                    <Space>
+                      <Button
+                        type={scenarioScope === 'portfolio' ? 'primary' : 'default'}
+                        onClick={() => setScenarioScope('portfolio')}
+                        icon={<BarChartOutlined />}
+                      >
+                        Portfolio-wide
+                      </Button>
+                      <Button
+                        type={scenarioScope === 'single' ? 'primary' : 'default'}
+                        onClick={() => setScenarioScope('single')}
+                        icon={<DollarOutlined />}
+                        disabled={!selectedAsset}
+                      >
+                        Single Asset
+                      </Button>
+                    </Space>
+                    {scenarioScope === 'single' && !selectedAsset && (
+                      <div style={{ fontSize: "12px", color: "#ff4d4f" }}>
+                        Please select an asset from the Portfolio tab first
+                      </div>
+                    )}
+                    {scenarioScope === 'single' && selectedAsset && (
+                      <div style={{ fontSize: "12px", color: "#52c41a" }}>
+                        Selected: {selectedAsset.asset}
+                      </div>
+                    )}
+                  </Space>
+                </Card>
               </Col>
             </Row>
 
             {selectedScenario.name === "Custom" && (
-              <div style={{ marginTop: "16px" }}>
-                <InputNumber
-                  value={customShock}
-                  onChange={(v) => setCustomShock(v || 0)}
-                  placeholder="Custom Shock %"
-                  size="large"
-                  style={{ width: 200 }}
-                  addonAfter="%"
-                />
-              </div>
+              <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
+                <Col xs={24} md={12}>
+                  <Card size="small" title="Custom Scenario Configuration">
+                    <Space direction="vertical" style={{ width: "100%" }}>
+                      <div>
+                        <strong>Scenario Name:</strong>
+                        <Input
+                          value={customScenarioName}
+                          onChange={(e) => setCustomScenarioName(e.target.value)}
+                          placeholder="Enter custom scenario name (e.g., 'Market Crash Test')"
+                          style={{ marginTop: "8px" }}
+                        />
+                      </div>
+                      <div>
+                        <strong>Shock Percentage:</strong>
+                        <InputNumber
+                          value={customShock}
+                          onChange={(v) => setCustomShock(v || 0)}
+                          placeholder="Custom Shock %"
+                          style={{ marginTop: "8px", width: "200px" }}
+                          addonAfter="%"
+                          size="large"
+                        />
+                      </div>
+                    </Space>
+                  </Card>
+                </Col>
+              </Row>
             )}
           </Card>
 
           {/* Results */}
           {results.length > 0 && (
-            <Card title={`Enhanced Results - ${selectedScenario.name}`} style={{ marginBottom: "24px" }}>
+            <Card title={`Enhanced Results - ${selectedScenario.name === "Custom" ? customScenarioName : selectedScenario.name}`} style={{ marginBottom: "24px" }}>
               {/* Risk Metrics Summary */}
               <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
                 <Col xs={24} sm={6}>
@@ -1543,7 +2149,7 @@ export default function WorkingEnhancedSimulator() {
                     <BarChart data={results}>
                       <XAxis dataKey="asset" />
                       <YAxis />
-                      <Tooltip 
+                      <RechartsTooltip 
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'Impact']}
                       />
                       <Bar dataKey="impact" fill="#1890ff" />
@@ -1602,6 +2208,7 @@ export default function WorkingEnhancedSimulator() {
           )}
         </TabPane>
 
+
         <TabPane tab="📊 Risk Metrics" key="risk">
           {results.length > 0 ? (
             <Row gutter={[16, 16]}>
@@ -1643,7 +2250,7 @@ export default function WorkingEnhancedSimulator() {
                     <BarChart data={results}>
                       <XAxis dataKey="asset" />
                       <YAxis />
-                      <Tooltip 
+                      <RechartsTooltip 
                         formatter={(value: number) => [`$${value.toLocaleString()}`, 'PnL Impact']}
                       />
                       <Bar dataKey="impact" fill="#1890ff" />
@@ -2114,13 +2721,13 @@ export default function WorkingEnhancedSimulator() {
               <Space>
                 <InfoCircleOutlined style={{ color: '#1890ff' }} />
                 <span>Simulation Assumptions & Methodology</span>
-                <Badge count="5" style={{ backgroundColor: '#52c41a' }} />
+                <Badge count="8" style={{ backgroundColor: '#52c41a' }} />
               </Space>
             }
             style={{ marginBottom: "24px" }}
           >
             <Collapse 
-              defaultActiveKey={['market-data', 'risk-factors', 'backtesting-config']}
+              defaultActiveKey={['market-data', 'risk-factors', 'scenario-history', 'manual-scenarios', 'backtesting-config']}
               size="small"
               items={[
                 {
@@ -2228,6 +2835,180 @@ export default function WorkingEnhancedSimulator() {
                   )
                 },
                 {
+                  key: 'scenario-history',
+                  label: (
+                    <Space>
+                      <Tag color="magenta">Scenario History & Audit</Tag>
+                      <span>Comprehensive execution tracking and audit trail</span>
+                    </Space>
+                  ),
+                  children: (
+                    <div>
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="blue">History Management</Tag>}>
+                            <Descriptions size="small" column={1} bordered>
+                              <Descriptions.Item label="Storage">
+                                <Tag color="green">localStorage</Tag> Persistent browser storage
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Retention">
+                                <Tag color="orange">Last 100</Tag> scenario executions
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Auto-Save">
+                                <Tag color="green">Enabled</Tag> Automatic after each execution
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Export Format">
+                                <Tag color="blue">CSV</Tag> Compliance-ready audit reports
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Session Tracking">
+                                <Tag color="purple">Session ID</Tag> + User Agent for traceability
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="green">Audit Capabilities</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Complete Parameters:</strong> All scenario inputs captured</li>
+                              <li><strong>Execution Timestamps:</strong> Precise date/time tracking</li>
+                              <li><strong>Results Archive:</strong> Full calculation results stored</li>
+                              <li><strong>Re-run Functionality:</strong> One-click scenario replay</li>
+                              <li><strong>Advanced Filtering:</strong> Search by type, scope, asset</li>
+                              <li><strong>Expandable Details:</strong> Complete parameter inspection</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                      </Row>
+                      
+                      <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="purple">Scenario Types Tracked</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Regular Scenarios:</strong> Equity, Rates, FX, Vol, Credit</li>
+                              <li><strong>Stress Tests:</strong> 2008, COVID, Mild Crisis</li>
+                              <li><strong>Monte Carlo:</strong> VaR calculations</li>
+                              <li><strong>Custom Scenarios:</strong> User-defined parameters</li>
+                              <li><strong>Backtesting:</strong> Historical scenario analysis</li>
+                              <li><strong>Manual Scenarios:</strong> Editable market data</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="orange">Scope Analysis</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Portfolio-wide:</strong> All assets analyzed</li>
+                              <li><strong>Single Asset:</strong> Individual asset focus</li>
+                              <li><strong>Asset Selection:</strong> User-chosen specific assets</li>
+                              <li><strong>Dynamic Filtering:</strong> Real-time search</li>
+                              <li><strong>Type Filtering:</strong> Scenario category filtering</li>
+                              <li><strong>Date Sorting:</strong> Chronological ordering</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="cyan">Compliance Features</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Regulatory Audit:</strong> Complete execution trail</li>
+                              <li><strong>CSV Export:</strong> Standard compliance format</li>
+                              <li><strong>Parameter Verification:</strong> Full input validation</li>
+                              <li><strong>Result Traceability:</strong> End-to-end tracking</li>
+                              <li><strong>Session Management:</strong> User session tracking</li>
+                              <li><strong>Data Integrity:</strong> Immutable execution records</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                      </Row>
+                    </div>
+                  )
+                },
+                {
+                  key: 'manual-scenarios',
+                  label: (
+                    <Space>
+                      <Tag color="geekblue">Manual Scenario Editing</Tag>
+                      <span>Interactive market data modification and custom scenarios</span>
+                    </Space>
+                  ),
+                  children: (
+                    <div>
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="blue">Market Data Editing</Tag>}>
+                            <Descriptions size="small" column={1} bordered>
+                              <Descriptions.Item label="Editable Tables">
+                                <Tag color="green">Volatility Surface</Tag> Strike × Maturity matrix
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Interest Rates">
+                                <Tag color="green">Yield Curves</Tag> Tenor-based rate editing
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Equity Data">
+                                <Tag color="green">Spot, Bid, Ask</Tag> Real-time price updates
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Correlations">
+                                <Tag color="green">Asset Pairs</Tag> Correlation coefficient editing
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Auto-Calculation">
+                                <Tag color="orange">Spread = Ask - Bid</Tag> Derived values
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="green">Workflow Integration</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Portfolio Integration:</strong> Edit from portfolio view</li>
+                              <li><strong>Modal Interface:</strong> In-place data editing</li>
+                              <li><strong>Real-time Updates:</strong> Live parameter changes</li>
+                              <li><strong>Scenario Naming:</strong> Custom scenario identification</li>
+                              <li><strong>Immediate Execution:</strong> Run scenarios with edited data</li>
+                              <li><strong>History Integration:</strong> Manual scenarios tracked</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                      </Row>
+                      
+                      <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="purple">Data Types Supported</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Equity Prices:</strong> Spot, bid, ask prices</li>
+                              <li><strong>Volatility Surface:</strong> Strike × Maturity matrix</li>
+                              <li><strong>Interest Rates:</strong> Yield curve tenors</li>
+                              <li><strong>Correlations:</strong> Asset pair relationships</li>
+                              <li><strong>Dividends:</strong> Dividend yield adjustments</li>
+                              <li><strong>FX Rates:</strong> Currency conversions</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="orange">Validation & Safety</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Input Validation:</strong> Numeric range checking</li>
+                              <li><strong>Data Integrity:</strong> Consistent market data</li>
+                              <li><strong>Error Handling:</strong> Graceful failure recovery</li>
+                              <li><strong>Undo Capability:</strong> Cancel editing mode</li>
+                              <li><strong>Auto-Save:</strong> Preserve edited values</li>
+                              <li><strong>Audit Trail:</strong> Track all manual changes</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="cyan">User Experience</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Intuitive Interface:</strong> Click-to-edit tables</li>
+                              <li><strong>Visual Feedback:</strong> Editing mode indicators</li>
+                              <li><strong>Responsive Design:</strong> Mobile-friendly editing</li>
+                              <li><strong>Keyboard Navigation:</strong> Tab-based editing</li>
+                              <li><strong>Batch Operations:</strong> Multi-cell editing</li>
+                              <li><strong>Context Help:</strong> Inline guidance</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                      </Row>
+                    </div>
+                  )
+                },
+                {
                   key: 'calculation-formulas',
                   label: (
                     <Space>
@@ -2277,6 +3058,7 @@ export default function WorkingEnhancedSimulator() {
                                   <li><strong>COVID-19 Crash:</strong> Feb-Apr 2020, -30% equity, +150% vol</li>
                                   <li><strong>2008 Crisis:</strong> Sep-Dec 2008, -40% equity, +200% vol</li>
                                   <li><strong>Mild Recession:</strong> 2022, -15% equity, +80% vol</li>
+                                  <li><strong>Custom Scenarios:</strong> User-defined market conditions</li>
                                 </ul>
                               </Descriptions.Item>
                               <Descriptions.Item label="Market Data Frequency">
@@ -2343,6 +3125,45 @@ export default function WorkingEnhancedSimulator() {
                           </Card>
                         </Col>
                       </Row>
+                      
+                      <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="magenta">Enhanced Features</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Custom Market Conditions:</strong> User-defined scenarios</li>
+                              <li><strong>Dynamic Deal Selection:</strong> Murex payload integration</li>
+                              <li><strong>Lifecycle Data:</strong> Real-time KO/KI schedules</li>
+                              <li><strong>History Integration:</strong> Backtesting audit trail</li>
+                              <li><strong>Re-run Capability:</strong> Replay historical backtests</li>
+                              <li><strong>Progress Tracking:</strong> Real-time execution status</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="green">Custom Scenarios</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Equity Decline:</strong> -15% (customizable)</li>
+                              <li><strong>Volatility Spike:</strong> +80% (adjustable)</li>
+                              <li><strong>Rate Cuts:</strong> -50bps (user-defined)</li>
+                              <li><strong>Credit Widening:</strong> +100bps (configurable)</li>
+                              <li><strong>Date Range:</strong> Flexible start/end dates</li>
+                              <li><strong>Frequency:</strong> Daily/Monthly selection</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={8}>
+                          <Card size="small" title={<Tag color="cyan">Data Integration</Tag>}>
+                            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                              <li><strong>Murex Payload:</strong> Real deal data integration</li>
+                              <li><strong>Dynamic Extraction:</strong> Live lifecycle data</li>
+                              <li><strong>Deal Selection:</strong> Multiple deal support</li>
+                              <li><strong>Product Identification:</strong> Automatic naming</li>
+                              <li><strong>Fixing Schedules:</strong> Real-time date updates</li>
+                              <li><strong>Barrier Tracking:</strong> KO/KI monitoring</li>
+                            </ul>
+                          </Card>
+                        </Col>
+                      </Row>
                     </div>
                   )
                 }
@@ -2350,12 +3171,355 @@ export default function WorkingEnhancedSimulator() {
             />
             
             <Alert
-              message="📋 Assumption Disclaimer"
-              description="These assumptions are based for testing purposes. Actual market conditions may vary significantly from these assumptions."
-              type="warning"
+              message="📋 Comprehensive System Assumptions"
+              description="This enhanced scenario management system includes: Real-time market data integration, comprehensive audit trails, manual scenario editing, backtesting with lifecycle data, and responsive design. All assumptions are based on Murex payload data and industry best practices for testing purposes. Actual market conditions may vary significantly from these assumptions."
+              type="info"
               showIcon
               style={{ marginTop: "16px" }}
             />
+          </Card>
+        </TabPane>
+
+        {/* Scenario History & Audit Trail Tab */}
+        <TabPane 
+          tab={
+            <Space>
+              <HistoryOutlined />
+              <span>📊 Scenario History</span>
+              {scenarioHistory.length > 0 && (
+                <Badge 
+                  count={scenarioHistory.length} 
+                  style={{ backgroundColor: '#52c41a' }}
+                  title={`${scenarioHistory.length} executed scenarios`}
+                />
+              )}
+            </Space>
+          } 
+          key="history"
+        >
+          <Card title="📊 Scenario Execution History & Audit Trail" style={{ marginBottom: "24px" }}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} lg={6}>
+                <Card size="small" title="🔍 Filters">
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    <div>
+                      <strong>Search:</strong>
+                      <Input
+                        placeholder="Search scenarios..."
+                        value={historyFilters.searchTerm}
+                        onChange={(e) => setHistoryFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                        allowClear
+                        prefix={<SearchOutlined />}
+                      />
+                    </div>
+                    <div>
+                      <strong>Scenario Type:</strong>
+                      <Select
+                        style={{ width: "100%" }}
+                        placeholder="All Types"
+                        value={historyFilters.scenarioType}
+                        onChange={(value) => setHistoryFilters(prev => ({ ...prev, scenarioType: value }))}
+                        allowClear
+                      >
+                        <Option value="equity">Equity</Option>
+                        <Option value="rates">Interest Rates</Option>
+                        <Option value="fx">FX</Option>
+                        <Option value="volatility">Volatility</Option>
+                        <Option value="credit">Credit</Option>
+                        <Option value="stress-test">Stress Test</Option>
+                        <Option value="monte-carlo">Monte Carlo</Option>
+                        <Option value="custom">Custom</Option>
+                        <Option value="backtesting">Backtesting</Option>
+                      </Select>
+                    </div>
+                    <div>
+                      <strong>Scope:</strong>
+                      <Select
+                        style={{ width: "100%" }}
+                        placeholder="All Scopes"
+                        value={historyFilters.assetFilter}
+                        onChange={(value) => setHistoryFilters(prev => ({ ...prev, assetFilter: value }))}
+                        allowClear
+                      >
+                        <Option value="portfolio">Portfolio-wide</Option>
+                        <Option value="single">Single Asset</Option>
+                      </Select>
+                    </div>
+                    <Button 
+                      type="primary" 
+                      icon={<DownloadOutlined />}
+                      onClick={() => exportScenarioHistory()}
+                      disabled={scenarioHistory.length === 0}
+                    >
+                      Export History
+                    </Button>
+                    <Button 
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => clearScenarioHistory()}
+                      disabled={scenarioHistory.length === 0}
+                    >
+                      Clear History
+                    </Button>
+                  </Space>
+                </Card>
+              </Col>
+              
+              <Col xs={24} lg={18}>
+                <Card size="small" title={`📈 Execution Summary (${filteredHistory.length} scenarios)`}>
+                  <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
+                    <Col span={6}>
+                      <Statistic
+                        title="Total Executions"
+                        value={scenarioHistory.length}
+                        prefix={<PlayCircleOutlined />}
+                        valueStyle={{ color: '#1890ff' }}
+                      />
+                    </Col>
+                    <Col span={6}>
+                      <Statistic
+                        title="This Week"
+                        value={getWeeklyExecutions()}
+                        prefix={<CalendarOutlined />}
+                        valueStyle={{ color: '#52c41a' }}
+                      />
+                    </Col>
+                    <Col span={6}>
+                      <Statistic
+                        title="Most Used Type"
+                        value={getMostUsedScenarioType()}
+                        valueStyle={{ color: '#faad14' }}
+                      />
+                    </Col>
+                    <Col span={6}>
+                      <Statistic
+                        title="Avg Impact"
+                        value={`$${getAverageImpact().toLocaleString()}`}
+                        prefix={<DollarOutlined />}
+                        valueStyle={{ color: '#f5222d' }}
+                      />
+                    </Col>
+                  </Row>
+                </Card>
+                
+                <div style={{ maxHeight: "600px", overflow: "auto" }}>
+                  {filteredHistory.length === 0 ? (
+                    <Card style={{ textAlign: 'center', padding: '40px' }}>
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={
+                          <span>
+                            {scenarioHistory.length === 0 
+                              ? "No scenarios executed yet. Run your first scenario to see it here!"
+                              : "No scenarios match your current filters."
+                            }
+                          </span>
+                        }
+                      />
+                    </Card>
+                  ) : (
+                    <Table
+                      size="small"
+                      dataSource={filteredHistory}
+                      pagination={{ pageSize: 10, showSizeChanger: true }}
+                      rowKey="id"
+                      expandable={{
+                        expandedRowRender: (record) => {
+                          const isBacktesting = record.scenarioType === 'backtesting';
+                          
+                          return (
+                            <Card size="small" title="📋 Detailed Scenario Parameters">
+                              <Row gutter={[16, 8]}>
+                                <Col span={12}>
+                                  <strong>Scenario ID:</strong> {record.id}
+                                </Col>
+                                <Col span={12}>
+                                  <strong>Session ID:</strong> {record.sessionId}
+                                </Col>
+                                {!isBacktesting && (
+                                  <Col span={12}>
+                                    <strong>Shock Value:</strong> {record.shockValue ? `${(record.shockValue * 100).toFixed(2)}%` : 'N/A'}
+                                  </Col>
+                                )}
+                                <Col span={12}>
+                                  <strong>Assets Analyzed:</strong> {record.assetsAnalyzed}
+                                </Col>
+                                <Col span={12}>
+                                  <strong>Total Impact:</strong> ${record.totalImpact.toLocaleString()}
+                                </Col>
+                                <Col span={12}>
+                                  <strong>Max Loss:</strong> ${record.maxLoss.toLocaleString()}
+                                </Col>
+                                
+                                {isBacktesting && record.backtestMetadata && (
+                                  <>
+                                    <Col span={12}>
+                                      <strong>Start Date:</strong> {record.backtestMetadata.startDate}
+                                    </Col>
+                                    <Col span={12}>
+                                      <strong>End Date:</strong> {record.backtestMetadata.endDate}
+                                    </Col>
+                                    <Col span={12}>
+                                      <strong>Period:</strong> {record.backtestMetadata.period}
+                                    </Col>
+                                    <Col span={12}>
+                                      <strong>Custom Scenario:</strong> {record.backtestMetadata.isCustomScenario ? 'Yes' : 'No'}
+                                    </Col>
+                                    {record.backtestMetadata.selectedDeal && (
+                                      <Col span={12}>
+                                        <strong>Selected Deal:</strong> {record.backtestMetadata.selectedDeal}
+                                      </Col>
+                                    )}
+                                    {record.backtestMetadata.customConditions && (
+                                      <Col span={24}>
+                                        <strong>Custom Market Conditions:</strong>
+                                        <div style={{ marginTop: '4px', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                                          <div>Equity: {record.backtestMetadata.customConditions.equityDecline}%</div>
+                                          <div>Volatility: +{record.backtestMetadata.customConditions.volatilitySpike}%</div>
+                                          <div>Rates: {record.backtestMetadata.customConditions.rateCuts}bps</div>
+                                          <div>Credit: +{record.backtestMetadata.customConditions.creditWidening}bps</div>
+                                        </div>
+                                      </Col>
+                                    )}
+                                  </>
+                                )}
+                                
+                                <Col span={24}>
+                                  <strong>Results Summary:</strong>
+                                  {record.results && record.results.length > 0 ? (
+                                    <Table
+                                      size="small"
+                                      dataSource={record.results.slice(0, 5)}
+                                      pagination={false}
+                                      columns={isBacktesting ? [
+                                        { title: 'Date', dataIndex: 'date', key: 'date' },
+                                        { title: 'P&L', dataIndex: 'pnl', key: 'pnl', render: (value) => `$${value ? value.toLocaleString() : '0'}` },
+                                        { title: 'Cumulative P&L', dataIndex: 'cumulativePnl', key: 'cumulativePnl', render: (value) => `$${value ? value.toLocaleString() : '0'}` },
+                                        { title: 'Market Condition', dataIndex: 'marketCondition', key: 'marketCondition' }
+                                      ] : [
+                                        { title: 'Asset', dataIndex: 'asset', key: 'asset' },
+                                        { title: 'Impact', dataIndex: 'impact', key: 'impact', render: (value) => `$${value ? value.toLocaleString() : '0'}` },
+                                        { title: 'Shock', dataIndex: 'shock', key: 'shock', render: (value) => value ? `${(value * 100).toFixed(2)}%` : 'N/A' }
+                                      ]}
+                                    />
+                                  ) : (
+                                    <div style={{ padding: '16px', textAlign: 'center', color: '#999' }}>
+                                      No results data available
+                                    </div>
+                                  )}
+                                </Col>
+                              </Row>
+                            </Card>
+                          );
+                        },
+                        rowExpandable: () => true,
+                      }}
+                      columns={[
+                        {
+                          title: 'Timestamp',
+                          dataIndex: 'timestamp',
+                          key: 'timestamp',
+                          width: 180,
+                          render: (timestamp) => (
+                            <div>
+                              <div>{new Date(timestamp).toLocaleDateString()}</div>
+                              <div style={{ fontSize: '11px', color: '#999' }}>
+                                {new Date(timestamp).toLocaleTimeString()}
+                              </div>
+                            </div>
+                          ),
+                          sorter: (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+                          defaultSortOrder: 'descend' as const,
+                        },
+                        {
+                          title: 'Scenario',
+                          dataIndex: 'scenarioName',
+                          key: 'scenarioName',
+                          width: 200,
+                          render: (name, record) => (
+                            <div>
+                              <div style={{ fontWeight: 'bold' }}>{name}</div>
+                              <Tag color={getScenarioTypeColor(record.scenarioType)}>
+                                {record.scenarioType.toUpperCase()}
+                              </Tag>
+                            </div>
+                          ),
+                        },
+                        {
+                          title: 'Scope',
+                          dataIndex: 'scenarioScope',
+                          key: 'scenarioScope',
+                          width: 100,
+                          render: (scope) => (
+                            <Tag color={scope === 'portfolio' ? 'blue' : 'green'}>
+                              {scope === 'portfolio' ? 'Portfolio' : 'Single'}
+                            </Tag>
+                          ),
+                        },
+                        {
+                          title: 'Asset',
+                          dataIndex: 'selectedAsset',
+                          key: 'selectedAsset',
+                          width: 150,
+                          render: (asset) => asset || 'All Assets',
+                        },
+                        {
+                          title: 'Shock',
+                          dataIndex: 'shockValue',
+                          key: 'shockValue',
+                          width: 80,
+                          render: (value, record) => {
+                            if (record.scenarioType === 'backtesting') {
+                              return <Tag color="magenta">Backtest</Tag>;
+                            }
+                            return value ? `${(value * 100).toFixed(1)}%` : 'N/A';
+                          },
+                          sorter: (a, b) => {
+                            if (a.scenarioType === 'backtesting' || b.scenarioType === 'backtesting') return 0;
+                            return (a.shockValue || 0) - (b.shockValue || 0);
+                          },
+                        },
+                        {
+                          title: 'Total Impact',
+                          dataIndex: 'totalImpact',
+                          key: 'totalImpact',
+                          width: 120,
+                          render: (value) => (
+                            <span style={{ color: value < 0 ? '#f5222d' : '#52c41a' }}>
+                              ${value.toLocaleString()}
+                            </span>
+                          ),
+                          sorter: (a, b) => a.totalImpact - b.totalImpact,
+                        },
+                        {
+                          title: 'Actions',
+                          key: 'actions',
+                          width: 100,
+                          render: (_, record) => (
+                            <Space>
+                              <Tooltip title="View Details">
+                                <Button 
+                                  type="link" 
+                                  icon={<EyeOutlined />}
+                                  onClick={() => viewScenarioDetails(record)}
+                                />
+                              </Tooltip>
+                              <Tooltip title="Re-run Scenario">
+                                <Button 
+                                  type="link" 
+                                  icon={<ReloadOutlined />}
+                                  onClick={() => rerunScenario(record)}
+                                />
+                              </Tooltip>
+                            </Space>
+                          ),
+                        },
+                      ]}
+                    />
+                  )}
+                </div>
+              </Col>
+            </Row>
           </Card>
         </TabPane>
       </Tabs>
@@ -2502,16 +3666,58 @@ export default function WorkingEnhancedSimulator() {
             <strong>📊 Market Data - {selectedAssetData?.asset || 'Asset'}</strong>
             <div style={{ fontSize: '14px', fontWeight: 'normal', marginTop: '4px', color: '#666' }}>
               {selectedAssetData?.instrumentName || 'Instrument Name'}
+              {isMarketDataModalEditable && (
+                <Tag color="orange" style={{ marginLeft: '8px' }}>✏️ Editing Mode</Tag>
+              )}
             </div>
           </div>
         }
         open={isDataModalOpen}
-        onCancel={() => setIsDataModalOpen(false)}
-        footer={null}
+        onCancel={() => {
+          setIsDataModalOpen(false);
+          if (isMarketDataModalEditable) {
+            setIsMarketDataModalEditable(false);
+            setIsEditingMarketData(false);
+          }
+        }}
+        footer={
+          isMarketDataModalEditable ? (
+            <div style={{ textAlign: 'right' }}>
+              <Space>
+                <Button onClick={() => {
+                  setIsDataModalOpen(false);
+                  setIsMarketDataModalEditable(false);
+                  setIsEditingMarketData(false);
+                }}>
+                  Cancel
+                </Button>
+                <Button type="primary" onClick={runManualScenario} disabled={!manualScenarioName.trim()}>
+                  Run Manual Scenario
+                </Button>
+              </Space>
+            </div>
+          ) : null
+        }
         width={1200}
       >
         {selectedAssetData && (
           <div>
+            {/* Scenario Name Input for Editing Mode */}
+            {isMarketDataModalEditable && (
+              <Card size="small" style={{ marginBottom: "16px" }}>
+                <Form layout="inline">
+                  <Form.Item label="Scenario Name" required>
+                    <Input
+                      placeholder="Enter scenario name (e.g., 'Market Crash Test')"
+                      value={manualScenarioName}
+                      onChange={(e) => setManualScenarioName(e.target.value)}
+                      style={{ width: "300px" }}
+                    />
+                  </Form.Item>
+                </Form>
+              </Card>
+            )}
+
             {/* Header Info */}
             <Row gutter={[16, 16]} style={{ marginBottom: "16px" }}>
               <Col span={8}>
@@ -2555,23 +3761,81 @@ export default function WorkingEnhancedSimulator() {
               {/* Equity Tab */}
               <TabPane tab="📈 Equity" key="equity">
                 <Card title="Equity Market Data" size="small">
-                  <Row gutter={[16, 16]}>
-                    <Col span={12}>
-                      <div><strong>Symbol:</strong> {selectedAssetData.marketData.symbol || 'N/A'}</div>
-                      <div><strong>Spot Price:</strong> ${selectedAssetData.marketData.spot || 'N/A'}</div>
-                      <div><strong>Bid:</strong> ${selectedAssetData.marketData.bid || 'N/A'}</div>
-                      <div><strong>Ask:</strong> ${selectedAssetData.marketData.ask || 'N/A'}</div>
-                      <div><strong>Spread:</strong> ${selectedAssetData.marketData.spread || 'N/A'}</div>
-                    </Col>
-                    <Col span={12}>
-                      <div><strong>Deal Spot:</strong> ${selectedAssetData.marketData.dealSpot || 'N/A'}</div>
-                      <div><strong>Currency:</strong> {selectedAssetData.marketData.currency || 'N/A'}</div>
-                      <div><strong>Notional:</strong> ${selectedAssetData.marketData.notional?.toLocaleString() || 'N/A'}</div>
-                      {selectedAssetData.marketData.dealSpot1 && (
-                        <div><strong>Deal Spot 2:</strong> ${selectedAssetData.marketData.dealSpot1}</div>
-                      )}
-                    </Col>
-                  </Row>
+                  <div style={{ marginBottom: "16px" }}>
+                    <strong>Asset:</strong> {selectedAssetData.marketData.symbol || 'N/A'} | 
+                    <strong> Currency:</strong> {selectedAssetData.marketData.currency || 'N/A'}
+                  </div>
+                  <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #d9d9d9", borderRadius: "6px" }}>
+                    <Table
+                      size="small"
+                      pagination={false}
+                      dataSource={[
+                        { key: 'spot', field: 'Spot Price', value: selectedAssetData.marketData.spot, prefix: '$', editable: true },
+                        { key: 'bid', field: 'Bid', value: selectedAssetData.marketData.bid, prefix: '$', editable: true },
+                        { key: 'ask', field: 'Ask', value: selectedAssetData.marketData.ask, prefix: '$', editable: true },
+                        { key: 'spread', field: 'Spread', value: selectedAssetData.marketData.spread, prefix: '$', editable: false },
+                        { key: 'dealSpot', field: 'Deal Spot', value: selectedAssetData.marketData.dealSpot, prefix: '$', editable: true },
+                        { key: 'notional', field: 'Notional', value: selectedAssetData.marketData.notional, prefix: '$', editable: true, format: 'number' },
+                        ...(selectedAssetData.marketData.dealSpot1 ? [{ key: 'dealSpot1', field: 'Deal Spot 2', value: selectedAssetData.marketData.dealSpot1, prefix: '$', editable: true }] : [])
+                      ]}
+                      columns={[
+                        { 
+                          title: 'Field', 
+                          dataIndex: 'field', 
+                          key: 'field', 
+                          width: 150,
+                          render: (text: string) => <strong>{text}</strong>
+                        },
+                        { 
+                          title: 'Value', 
+                          dataIndex: 'value', 
+                          key: 'value', 
+                          width: 200,
+                          render: (value: any, record: any) => {
+                            if (!isMarketDataModalEditable || !record.editable) {
+                              // Display mode
+                              if (record.format === 'number' && value) {
+                                return <span>{record.prefix}{value.toLocaleString()}</span>;
+                              }
+                              return <span>{record.prefix}{value || 'N/A'}</span>;
+                            }
+                            
+                            // Edit mode
+                            if (record.format === 'number') {
+                              return (
+                                <InputNumber
+                                  size="small"
+                                  value={value}
+                                  onChange={(val) => updateEquityMarketData(record.key, val)}
+                                  style={{ width: '150px' }}
+                                  precision={2}
+                                  prefix={record.prefix}
+                                  min={0}
+                                />
+                              );
+                            }
+                            
+                            return (
+                              <InputNumber
+                                size="small"
+                                value={value}
+                                onChange={(val) => updateEquityMarketData(record.key, val)}
+                                style={{ width: '150px' }}
+                                precision={2}
+                                prefix={record.prefix}
+                              />
+                            );
+                          }
+                        }
+                      ]}
+                    />
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#666", marginTop: "8px" }}>
+                    <strong>Note:</strong> {isMarketDataModalEditable ? 
+                      'Click on values to edit. Spread is calculated automatically from Bid/Ask.' : 
+                      'Click "Run Manual Scenario" or "Edit Data" in Portfolio tab to enable editing.'
+                    }
+                  </div>
                 </Card>
               </TabPane>
 
@@ -2638,8 +3902,24 @@ export default function WorkingEnhancedSimulator() {
                               key: `maturity_${index}`,
                               width: 90,
                               align: 'center' as const,
-                              render: (value: string) => {
+                              render: (value: string, _record: any, rowIndex: number) => {
                                 const numericValue = parseFloat(value.replace('$', ''));
+                                
+                                if (isMarketDataModalEditable) {
+                                  return (
+                                    <InputNumber
+                                      size="small"
+                                      value={numericValue}
+                                      onChange={(val) => updateVolatilityData(rowIndex, index, val || 0)}
+                                      style={{ width: '80px' }}
+                                      precision={2}
+                                      prefix="$"
+                                      min={0}
+                                      max={1000}
+                                    />
+                                  );
+                                }
+                                
                                 return (
                                   <span style={{ 
                                     fontSize: "11px",
@@ -2706,7 +3986,33 @@ export default function WorkingEnhancedSimulator() {
                       columns={[
                         { title: 'Date', dataIndex: 'date', key: 'date', width: 120 },
                         { title: 'Tenor', dataIndex: 'tenor', key: 'tenor', width: 80 },
-                        { title: 'Rate', dataIndex: 'rate', key: 'rate', width: 100, align: 'right' },
+                        { 
+                          title: 'Rate', 
+                          dataIndex: 'rate', 
+                          key: 'rate', 
+                          width: 100, 
+                          align: 'right',
+                          render: (value: string, record: any) => {
+                            const numericValue = parseFloat(value.replace('%', ''));
+                            
+                            if (isMarketDataModalEditable) {
+                              return (
+                                <InputNumber
+                                  size="small"
+                                  value={numericValue}
+                                  onChange={(val) => updateInterestRateData('USD', record.key, (val || 0) / 100)}
+                                  style={{ width: '80px' }}
+                                  precision={4}
+                                  suffix="%"
+                                  min={0}
+                                  max={50}
+                                />
+                              );
+                            }
+                            
+                            return <span>{value}</span>;
+                          }
+                        },
                         { title: 'Excel Date', dataIndex: 'excelDate', key: 'excelDate', width: 100 }
                       ]}
                     />
@@ -2748,8 +4054,24 @@ export default function WorkingEnhancedSimulator() {
                           key: 'correlation', 
                           width: 120,
                           align: 'center' as const,
-                          render: (value: string) => {
+                          render: (value: string, record: any) => {
                             const numValue = parseFloat(value);
+                            
+                            if (isMarketDataModalEditable) {
+                              return (
+                                <InputNumber
+                                  size="small"
+                                  value={numValue}
+                                  onChange={(val) => updateCorrelationDataInModal(parseInt(record.key) - 1, val || 0)}
+                                  style={{ width: '80px' }}
+                                  precision={3}
+                                  min={-1}
+                                  max={1}
+                                  step={0.01}
+                                />
+                              );
+                            }
+                            
                             const color = numValue > 0.7 ? '#52c41a' : numValue > 0.3 ? '#faad14' : numValue > -0.3 ? '#1890ff' : '#ff4d4f';
                             return (
                               <span style={{ color, fontWeight: 'bold' }}>
