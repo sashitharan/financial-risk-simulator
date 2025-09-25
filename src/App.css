@@ -363,6 +363,34 @@ p {
   background: var(--table-row-hover) !important;
 }
 
+/* Disable row selection highlight in dark mode */
+.dark-theme .ant-table-row-selected {
+  background: transparent !important;
+  border: none !important;
+}
+
+.dark-theme .ant-table-row-selected:hover {
+  background: transparent !important;
+}
+
+.dark-theme .ant-table-row-selected td {
+  background: transparent !important;
+}
+
+.dark-theme .ant-table-row-selected td:hover {
+  background: transparent !important;
+}
+
+/* Also disable hover effects for selected rows in dark mode */
+.dark-theme .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+  background: transparent !important;
+}
+
+/* Disable general row hover effects in dark mode for cleaner look */
+.dark-theme .ant-table-tbody > tr:hover > td {
+  background: transparent !important;
+}
+
 /* Buttons */
 .ant-btn {
   font-family: var(--font-family);
