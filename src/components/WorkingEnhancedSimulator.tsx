@@ -1914,7 +1914,7 @@ export default function WorkingEnhancedSimulator() {
                           <strong>{scenario.name}</strong>
                           <Tag color={getCategoryColor(scenario.category)}>{scenario.category.toUpperCase()}</Tag>
                         </div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>{scenario.description}</div>
+                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{scenario.description}</div>
                       </Select.Option>
                     ))}
                   </Select.OptGroup>
@@ -1931,9 +1931,9 @@ export default function WorkingEnhancedSimulator() {
                             {scenario.severity?.toUpperCase()}
                           </Tag>
                         </div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>{scenario.description}</div>
+                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{scenario.description}</div>
                         {scenario.historicalBasis && (
-                          <div style={{ fontSize: "10px", color: "#999" }}>Based on: {scenario.historicalBasis}</div>
+                          <div style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>Based on: {scenario.historicalBasis}</div>
                         )}
                       </Select.Option>
                     ))}
@@ -1947,8 +1947,8 @@ export default function WorkingEnhancedSimulator() {
                           <strong>{scenario.name}</strong>
                           <Tag color="purple">MC</Tag>
                         </div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>{scenario.description}</div>
-                        <div style={{ fontSize: "10px", color: "#999" }}>
+                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{scenario.description}</div>
+                        <div style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
                           {scenario.numSimulations?.toLocaleString()} simulations | {scenario.distributionType} | {((scenario.confidenceLevel || 0) * 100)}% confidence
                         </div>
                       </Select.Option>
@@ -1961,7 +1961,7 @@ export default function WorkingEnhancedSimulator() {
                       <strong>Custom Scenario</strong>
                       <Tag color="gray">CUSTOM</Tag>
                     </div>
-                    <div style={{ fontSize: "12px", color: "#666" }}>Define your own shock parameters</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Define your own shock parameters</div>
                   </Select.Option>
                 </Select>
               </Col>
@@ -2158,7 +2158,7 @@ export default function WorkingEnhancedSimulator() {
                 </Col>
               </Row>
               
-              <div style={{ textAlign: "center", marginTop: "16px", padding: "16px", background: "#f5f5f5", borderRadius: "8px" }}>
+              <div style={{ textAlign: "center", marginTop: "16px", padding: "16px", background: "var(--bg-secondary)", borderRadius: "8px" }}>
                 <div style={{ 
                   fontSize: "1.8rem", 
                   fontWeight: "bold",
@@ -2167,10 +2167,10 @@ export default function WorkingEnhancedSimulator() {
                 }}>
                   Total Portfolio Impact: {totalImpact >= 0 ? '+' : ''}${totalImpact.toLocaleString()}
                 </div>
-                <div style={{ fontSize: "1.1rem", color: "#666" }}>
+                <div style={{ fontSize: "1.1rem", color: "var(--text-secondary)" }}>
                   Impact as % of Portfolio: {impactPercentage.toFixed(2)}%
                 </div>
-                <div style={{ fontSize: "0.9rem", color: "#999", marginTop: "4px" }}>
+                <div style={{ fontSize: "0.9rem", color: "var(--text-tertiary)", marginTop: "4px" }}>
                   Scenario Category: <strong>{selectedScenario.category.toUpperCase()}</strong> | 
                   Shock Value: <strong>{(selectedScenario.shock * 100).toFixed(1)}%</strong>
                 </div>
@@ -2185,10 +2185,10 @@ export default function WorkingEnhancedSimulator() {
             >
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-                <h3 style={{ color: '#666', marginBottom: '16px' }}>
+                <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>
                   No Asset Selected
                 </h3>
-                <p style={{ color: '#999', marginBottom: '24px', fontSize: '16px' }}>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '16px' }}>
                   Please select an asset from the Portfolio tab to run scenario analysis and risk simulations.
                 </p>
                 <Button 
@@ -3373,7 +3373,7 @@ export default function WorkingEnhancedSimulator() {
                                     {record.backtestMetadata.customConditions && (
                                       <Col span={24}>
                                         <strong>Custom Market Conditions:</strong>
-                                        <div style={{ marginTop: '4px', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                                        <div style={{ marginTop: '4px', padding: '8px', backgroundColor: 'var(--bg-secondary)', borderRadius: '4px' }}>
                                           <div>Equity: {record.backtestMetadata.customConditions.equityDecline}%</div>
                                           <div>Volatility: +{record.backtestMetadata.customConditions.volatilitySpike}%</div>
                                           <div>Rates: {record.backtestMetadata.customConditions.rateCuts}bps</div>
@@ -3581,9 +3581,9 @@ export default function WorkingEnhancedSimulator() {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <div style={{ padding: "16px", background: "#f5f5f5", borderRadius: "6px", marginTop: "30px" }}>
+              <div style={{ padding: "16px", background: "var(--bg-secondary)", borderRadius: "6px", marginTop: "30px" }}>
                 <strong>Risk Factors (Greeks)</strong>
-                <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
                   These will be auto-calculated based on instrument type, or you can override them
                 </div>
               </div>
@@ -3830,7 +3830,7 @@ export default function WorkingEnhancedSimulator() {
                       ]}
                     />
                   </div>
-                  <div style={{ fontSize: "11px", color: "#666", marginTop: "8px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "8px" }}>
                     <strong>Note:</strong> {isMarketDataModalEditable ? 
                       'Click on values to edit. Spread is calculated automatically from Bid/Ask.' : 
                       'Click "Run Manual Scenario" or "Edit Data" in Portfolio tab to enable editing.'
@@ -3934,7 +3934,7 @@ export default function WorkingEnhancedSimulator() {
                         ]}
                       />
                     </div>
-                    <div style={{ fontSize: "11px", color: "#666", marginTop: "8px" }}>
+                    <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "8px" }}>
                       Showing all {selectedAssetData.volatility.strikes.length} strikes × {selectedAssetData.volatility.maturities.length} maturities
                     </div>
                   </Card>
@@ -4083,7 +4083,7 @@ export default function WorkingEnhancedSimulator() {
                       ]}
                     />
                   </div>
-                  <div style={{ fontSize: "11px", color: "#666", marginTop: "8px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "8px" }}>
                     <strong>Color Coding:</strong> 
                     <span style={{ color: '#52c41a', fontWeight: 'bold' }}> Green ({'>'}0.7)</span> | 
                     <span style={{ color: '#faad14', fontWeight: 'bold' }}> Yellow (0.3-0.7)</span> | 
