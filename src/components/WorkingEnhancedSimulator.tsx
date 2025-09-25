@@ -591,22 +591,22 @@ export default function WorkingEnhancedSimulator() {
     
     try {
       Modal.info({
-      title: `Scenario Details: ${record.scenarioName}`,
+      title: `Scenario Details: ${record.scenarioName || 'Unknown'}`,
       width: 900,
       content: (
         <div>
           <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Scenario ID">{record.id}</Descriptions.Item>
-            <Descriptions.Item label="Execution Time">{new Date(record.timestamp).toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="Scenario Type">{record.scenarioType}</Descriptions.Item>
-            <Descriptions.Item label="Scope">{record.scenarioScope}</Descriptions.Item>
-            {!isBacktesting && (
-              <Descriptions.Item label="Shock Value">{(record.shockValue * 100).toFixed(2)}%</Descriptions.Item>
+            <Descriptions.Item label="Scenario ID">{record.id || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Execution Time">{record.timestamp ? new Date(record.timestamp).toLocaleString() : 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Scenario Type">{record.scenarioType || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Scope">{record.scenarioScope || 'N/A'}</Descriptions.Item>
+            {!isBacktesting && record.shockValue !== null && record.shockValue !== undefined && (
+              <Descriptions.Item label="Shock Value">{(Number(record.shockValue) * 100).toFixed(2)}%</Descriptions.Item>
             )}
-            <Descriptions.Item label="Assets Analyzed">{record.assetsAnalyzed}</Descriptions.Item>
-            <Descriptions.Item label="Total Impact">${record.totalImpact.toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="Max Loss">${record.maxLoss.toLocaleString()}</Descriptions.Item>
-            <Descriptions.Item label="Session ID" span={2}>{record.sessionId}</Descriptions.Item>
+            <Descriptions.Item label="Assets Analyzed">{record.assetsAnalyzed || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Total Impact">{record.totalImpact ? `$${Number(record.totalImpact).toLocaleString()}` : 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Max Loss">{record.maxLoss ? `$${Number(record.maxLoss).toLocaleString()}` : 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Session ID" span={2}>{record.sessionId || 'N/A'}</Descriptions.Item>
           </Descriptions>
           
           {isBacktesting && record.backtestMetadata && (
@@ -638,24 +638,30 @@ export default function WorkingEnhancedSimulator() {
           
           <div style={{ marginTop: '16px' }}>
             <h4>Detailed Results:</h4>
-            <Table
-              size="small"
-              dataSource={record.results}
-              pagination={false}
+            {record.results && record.results.length > 0 ? (
+              <Table
+                size="small"
+                dataSource={record.results}
+                pagination={false}
               columns={isBacktesting ? [
                 { title: 'Date', dataIndex: 'date', key: 'date' },
-                { title: 'P&L', dataIndex: 'pnl', key: 'pnl', render: (value) => `$${value.toLocaleString()}` },
-                { title: 'Cumulative P&L', dataIndex: 'cumulativePnl', key: 'cumulativePnl', render: (value) => `$${value.toLocaleString()}` },
+                { title: 'P&L', dataIndex: 'pnl', key: 'pnl', render: (value) => value ? `$${Number(value).toLocaleString()}` : 'N/A' },
+                { title: 'Cumulative P&L', dataIndex: 'cumulativePnl', key: 'cumulativePnl', render: (value) => value ? `$${Number(value).toLocaleString()}` : 'N/A' },
                 { title: 'Market Condition', dataIndex: 'marketCondition', key: 'marketCondition' }
               ] : [
                 { title: 'Asset', dataIndex: 'asset', key: 'asset' },
                 { title: 'Quantity', dataIndex: 'quantity', key: 'quantity' },
-                { title: 'Original Price', dataIndex: 'originalPrice', key: 'originalPrice', render: (value) => `$${value.toFixed(2)}` },
-                { title: 'New Price', dataIndex: 'newPrice', key: 'newPrice', render: (value) => `$${value.toFixed(2)}` },
-                { title: 'Shock', dataIndex: 'shock', key: 'shock', render: (value) => `${(value * 100).toFixed(2)}%` },
-                { title: 'Impact', dataIndex: 'impact', key: 'impact', render: (value) => `$${value.toLocaleString()}` }
+                { title: 'Original Price', dataIndex: 'originalPrice', key: 'originalPrice', render: (value) => value ? `$${Number(value).toFixed(2)}` : 'N/A' },
+                { title: 'New Price', dataIndex: 'newPrice', key: 'newPrice', render: (value) => value ? `$${Number(value).toFixed(2)}` : 'N/A' },
+                { title: 'Shock', dataIndex: 'shock', key: 'shock', render: (value) => value ? `${(Number(value) * 100).toFixed(2)}%` : 'N/A' },
+                { title: 'Impact', dataIndex: 'impact', key: 'impact', render: (value) => value ? `$${Number(value).toLocaleString()}` : 'N/A' }
               ]}
             />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>
+                No detailed results available for this scenario.
+              </div>
+            )}
           </div>
         </div>
       ),
