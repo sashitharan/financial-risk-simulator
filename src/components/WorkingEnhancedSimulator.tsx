@@ -1969,13 +1969,13 @@ export default function WorkingEnhancedSimulator() {
               <Col xs={24} md={8}>
                 <div style={{ 
                   padding: "8px 16px", 
-                  background: "var(--scenario-bg, #f5f5f5)", 
+                  background: "var(--bg-secondary)", 
                   borderRadius: "6px",
-                  border: "1px solid var(--scenario-border, #e8e8e8)"
+                  border: "1px solid var(--border-primary)"
                 }}>
-                  <strong style={{ color: "var(--scenario-text, #1f2937)" }}>{selectedScenario.name}</strong>
+                  <strong style={{ color: "var(--text-primary)" }}>{selectedScenario.name}</strong>
                   <br />
-                  <small style={{ color: "var(--scenario-desc, #666)" }}>{selectedScenario.description}</small>
+                  <small style={{ color: "var(--text-secondary)" }}>{selectedScenario.description}</small>
                 </div>
               </Col>
               
@@ -2375,18 +2375,18 @@ export default function WorkingEnhancedSimulator() {
                   {selectedBacktestScenario && (
                     <div style={{ 
                       padding: "12px", 
-                      backgroundColor: "var(--scenario-bg, #f6f8fa)", 
+                      backgroundColor: "var(--bg-secondary)", 
                       borderRadius: "6px",
                       marginBottom: "16px",
-                      border: "1px solid var(--scenario-border, #e8e8e8)"
+                      border: "1px solid var(--border-primary)"
                     }}>
-                      <h4 style={{ margin: "0 0 8px 0", color: "var(--scenario-text, #24292e)" }}>
+                      <h4 style={{ margin: "0 0 8px 0", color: "var(--text-primary)" }}>
                         {selectedBacktestScenario.name}
                       </h4>
-                      <p style={{ margin: "0 0 8px 0", color: "var(--scenario-desc, #586069)" }}>
+                      <p style={{ margin: "0 0 8px 0", color: "var(--text-secondary)" }}>
                         {selectedBacktestScenario.description}
                       </p>
-                      <div style={{ fontSize: "12px", color: "var(--scenario-desc, #6a737d)" }}>
+                      <div style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>
                         <strong>Period:</strong> {selectedBacktestScenario.startDate} to {selectedBacktestScenario.endDate}
                         <br />
                         <strong>Frequency:</strong> {selectedBacktestScenario.period}
@@ -2434,12 +2434,12 @@ export default function WorkingEnhancedSimulator() {
                       
                       <div style={{ 
                         padding: "12px", 
-                        backgroundColor: "var(--scenario-bg, #f6f8fa)", 
+                        backgroundColor: "var(--bg-secondary)", 
                         borderRadius: "6px",
                         marginBottom: "16px",
-                        border: "1px solid var(--scenario-border, #e8e8e8)"
+                        border: "1px solid var(--border-primary)"
                       }}>
-                        <h4 style={{ margin: "0 0 12px 0", color: "var(--scenario-text, #24292e)" }}>
+                        <h4 style={{ margin: "0 0 12px 0", color: "var(--text-primary)" }}>
                           📊 Market Conditions
                         </h4>
                         
@@ -2494,7 +2494,7 @@ export default function WorkingEnhancedSimulator() {
                           </Col>
                         </Row>
                         
-                        <div style={{ marginTop: "12px", fontSize: "12px", color: "var(--scenario-desc, #6a737d)" }}>
+                        <div style={{ marginTop: "12px", fontSize: "12px", color: "var(--text-tertiary)" }}>
                           <strong>Preview:</strong> 
                           <Tag color="red" style={{ marginLeft: "4px" }}>Equity: {customMarketConditions.equityDecline}%</Tag>
                           <Tag color="orange">Vol: +{customMarketConditions.volatilitySpike}%</Tag>
