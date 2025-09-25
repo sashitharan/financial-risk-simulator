@@ -98,7 +98,7 @@ const AppContent = () => {
           minHeight: '100vh',
         }}>
           <h1 style={{ 
-            color: isDark ? '#ffffff' : '#ffffff', 
+            color: isDark ? '#ffffff' : '#1f2937', 
             textAlign: 'center', 
             marginBottom: '32px', 
             fontSize: '2.5rem', 

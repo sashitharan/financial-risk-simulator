@@ -1100,6 +1100,8 @@ export default function WorkingEnhancedSimulator() {
         quantity: pos.quantity,
         shock: shockValue,
         impact,
+        originalPrice: pos.price,
+        newPrice: shockedPrice,
         originalValue: pos.price * pos.quantity,
         shockedValue: shockedPrice * pos.quantity,
         riskMetrics: {
@@ -2038,7 +2040,7 @@ export default function WorkingEnhancedSimulator() {
                     <strong> Price:</strong> ${selectedAsset.price.toFixed(2)} | 
                     <strong> Value:</strong> ${(selectedAsset.price * selectedAsset.quantity).toLocaleString()}
                     <br />
-                    <Tag color="green" style={{ marginTop: '8px' }}>
+                    <Tag color="darkgreen" style={{ marginTop: '8px' }}>
                       ✅ Ready for scenario analysis - Go to Scenarios tab to run simulations
                     </Tag>
                   </div>
@@ -3133,7 +3135,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'market-data',
                   label: (
                     <Space>
-                      <Tag style={{ backgroundColor: '#1890ff', color: 'white', border: 'none' }}>Market Data</Tag>
+                      <Tag color="blue">Market Data</Tag>
                       <span>Real-time pricing and volatility surfaces</span>
                     </Space>
                   ),
@@ -3161,7 +3163,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'risk-factors',
                   label: (
                     <Space>
-                      <Tag style={{ backgroundColor: '#fa8c16', color: 'white', border: 'none' }}>Risk Factors</Tag>
+                      <Tag color="orange">Risk Factors</Tag>
                       <span>Greeks and sensitivity assumptions</span>
                     </Space>
                   ),
@@ -3189,7 +3191,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'scenario-methodology',
                   label: (
                     <Space>
-                      <Tag style={{ backgroundColor: '#f5222d', color: 'white', border: 'none' }}>Scenario Methodology</Tag>
+                      <Tag color="red">Scenario Methodology</Tag>
                       <span>Shock application and calculation logic</span>
                     </Space>
                   ),
@@ -3237,7 +3239,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'scenario-history',
                   label: (
                     <Space>
-                      <Tag style={{ backgroundColor: '#eb2f96', color: 'white', border: 'none' }}>Scenario History & Audit</Tag>
+                      <Tag color="magenta">Scenario History & Audit</Tag>
                       <span>Comprehensive execution tracking and audit trail</span>
                     </Space>
                   ),
@@ -3324,7 +3326,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'manual-scenarios',
                   label: (
                     <Space>
-                      <Tag style={{ backgroundColor: '#1890ff', color: 'white', border: 'none' }}>Manual Scenario Editing</Tag>
+                      <Tag color="geekblue">Manual Scenario Editing</Tag>
                       <span>Interactive market data modification and custom scenarios</span>
                     </Space>
                   ),
@@ -3411,7 +3413,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'calculation-formulas',
                   label: (
                     <Space>
-                      <Tag style={{ backgroundColor: '#722ed1', color: 'white', border: 'none' }}>Calculation Formulas</Tag>
+                      <Tag color="purple">Calculation Formulas</Tag>
                       <span>Mathematical models and equations</span>
                     </Space>
                   ),
@@ -3442,7 +3444,7 @@ export default function WorkingEnhancedSimulator() {
                   key: 'backtesting-config',
                   label: (
                     <Space>
-                      <Tag style={{ backgroundColor: '#13c2c2', color: 'white', border: 'none' }}>Backtesting Configuration</Tag>
+                      <Tag color="cyan">Backtesting Configuration</Tag>
                       <span>Historical scenario replay and lifecycle elements</span>
                     </Space>
                   ),
