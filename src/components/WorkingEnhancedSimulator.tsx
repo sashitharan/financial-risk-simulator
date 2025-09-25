@@ -1898,17 +1898,42 @@ export default function WorkingEnhancedSimulator() {
               <Col xs={24} md={12}>
                 <Select
                   value={selectedScenario.id}
-                  style={{ width: "100%" }}
+                  style={{ 
+                    width: "100%",
+                    minHeight: "auto"
+                  }}
                   onChange={(value) => {
                     const scenario = ALL_SCENARIOS.find(s => s.id === value);
                     if (scenario) setSelectedScenario(scenario);
                   }}
                   size="large"
                   placeholder="Select Enhanced Scenario"
+                  dropdownStyle={{
+                    maxHeight: "400px",
+                    overflowY: "auto"
+                  }}
+                  optionLabelProp="label"
                 >
                   <Select.OptGroup label="📈 Standard Scenarios - Quick Market Shock Analysis">
                     {STANDARD_SCENARIOS.map((scenario) => (
-                      <Select.Option key={scenario.id} value={scenario.id}>
+                      <Select.Option 
+                        key={scenario.id} 
+                        value={scenario.id}
+                        label={
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px',
+                            flexWrap: 'wrap',
+                            minWidth: 0,
+                            width: '100%'
+                          }}>
+                            {scenario.icon}
+                            <strong style={{ flex: '1 1 auto', minWidth: 0 }}>{scenario.name}</strong>
+                            <Tag color={getCategoryColor(scenario.category)} style={{ flex: '0 0 auto' }}>{scenario.category.toUpperCase()}</Tag>
+                          </div>
+                        }
+                      >
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -1934,7 +1959,29 @@ export default function WorkingEnhancedSimulator() {
                   
                   <Select.OptGroup label="⚡ Stress Tests - Historical Crisis Simulation">
                     {STRESS_TEST_SCENARIOS.map((scenario) => (
-                      <Select.Option key={scenario.id} value={scenario.id}>
+                      <Select.Option 
+                        key={scenario.id} 
+                        value={scenario.id}
+                        label={
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px',
+                            flexWrap: 'wrap',
+                            minWidth: 0,
+                            width: '100%'
+                          }}>
+                            {scenario.icon}
+                            <strong style={{ flex: '1 1 auto', minWidth: 0 }}>{scenario.name}</strong>
+                            <Tag color={scenario.severity === 'extreme' ? 'red' : 
+                                        scenario.severity === 'severe' ? 'orange' : 
+                                        scenario.severity === 'moderate' ? 'yellow' : 'green'}
+                                 style={{ flex: '0 0 auto' }}>
+                              {scenario.severity?.toUpperCase()}
+                            </Tag>
+                          </div>
+                        }
+                      >
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -1974,7 +2021,24 @@ export default function WorkingEnhancedSimulator() {
                   
                   <Select.OptGroup label="🎲 Monte Carlo - Statistical Risk Modeling">
                     {MONTE_CARLO_SCENARIOS.map((scenario) => (
-                      <Select.Option key={scenario.id} value={scenario.id}>
+                      <Select.Option 
+                        key={scenario.id} 
+                        value={scenario.id}
+                        label={
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px',
+                            flexWrap: 'wrap',
+                            minWidth: 0,
+                            width: '100%'
+                          }}>
+                            {scenario.icon}
+                            <strong style={{ flex: '1 1 auto', minWidth: 0 }}>{scenario.name}</strong>
+                            <Tag color="purple" style={{ flex: '0 0 auto' }}>MC</Tag>
+                          </div>
+                        }
+                      >
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -2007,7 +2071,23 @@ export default function WorkingEnhancedSimulator() {
                     ))}
                   </Select.OptGroup>
                   
-                  <Select.Option value="custom">
+                  <Select.Option 
+                    value="custom"
+                    label={
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                        minWidth: 0,
+                        width: '100%'
+                      }}>
+                        <ExperimentOutlined />
+                        <strong style={{ flex: '1 1 auto', minWidth: 0 }}>Custom Scenario</strong>
+                        <Tag color="gray" style={{ flex: '0 0 auto' }}>CUSTOM</Tag>
+                      </div>
+                    }
+                  >
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
