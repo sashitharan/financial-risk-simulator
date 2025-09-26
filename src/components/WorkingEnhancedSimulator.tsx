@@ -2260,33 +2260,18 @@ export default function WorkingEnhancedSimulator() {
                   <div style={{ marginBottom: '8px' }}>
                     <strong>Quick Actions:</strong>
                   </div>
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Button 
-                      type="primary"
-                      icon={<BarChartOutlined />}
-                      onClick={() => {
-                        // Switch to scenarios tab
-                        const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
-                        if (scenariosTab) scenariosTab.click();
-                      }}
-                      style={{ width: '100%' }}
-                    >
-                      Run {scenarioScope === 'portfolio' ? 'Portfolio' : 'Asset'} Analysis
-                    </Button>
-                    <Button 
-                      icon={<EyeOutlined />}
-                      onClick={() => {
-                        if (selectedAsset) {
-                          setIsDataModalOpen(true);
-                          setSelectedAssetData(getAssetMarketData(selectedAsset.asset, selectedAsset));
-                        }
-                      }}
-                      disabled={!selectedAsset}
-                      style={{ width: '100%' }}
-                    >
-                      View Market Data
-                    </Button>
-                  </Space>
+                  <Button 
+                    type="primary"
+                    icon={<BarChartOutlined />}
+                    onClick={() => {
+                      // Switch to scenarios tab
+                      const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
+                      if (scenariosTab) scenariosTab.click();
+                    }}
+                    style={{ width: '100%' }}
+                  >
+                    Run {scenarioScope === 'portfolio' ? 'Portfolio' : 'Asset'} Analysis
+                  </Button>
                 </Col>
               </Row>
             </Card>
@@ -2631,45 +2616,6 @@ export default function WorkingEnhancedSimulator() {
               </Col>
             </Row>
 
-            {/* Scenario Scope Selection */}
-            <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
-              <Col xs={24} md={12}>
-                <Card size="small" title="Scenario Scope">
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    <div>
-                      <strong>Analysis Scope:</strong>
-                    </div>
-                    <Space>
-                      <Button
-                        type={scenarioScope === 'portfolio' ? 'primary' : 'default'}
-                        onClick={() => setScenarioScope('portfolio')}
-                        icon={<BarChartOutlined />}
-                      >
-                        Portfolio-wide
-                      </Button>
-                      <Button
-                        type={scenarioScope === 'single' ? 'primary' : 'default'}
-                        onClick={() => setScenarioScope('single')}
-                        icon={<DollarOutlined />}
-                        disabled={!selectedAsset}
-                      >
-                        Single Asset
-                      </Button>
-                    </Space>
-                    {scenarioScope === 'single' && !selectedAsset && (
-                      <div style={{ fontSize: "12px", color: "var(--error)" }}>
-                        Please select an asset from the Portfolio tab first
-                      </div>
-                    )}
-                    {scenarioScope === 'single' && selectedAsset && (
-                      <div style={{ fontSize: "12px", color: "var(--success)" }}>
-                        Selected: {selectedAsset.asset}
-                      </div>
-                    )}
-                  </Space>
-                </Card>
-              </Col>
-            </Row>
 
             {selectedScenario.name === "Custom" && (
               <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
@@ -4468,9 +4414,58 @@ export default function WorkingEnhancedSimulator() {
                 Close
               </Button>
               {isEditMode && (
-                <Button onClick={exitEditMode}>
-                  Cancel Edit
-                </Button>
+                <>
+                  <Button onClick={exitEditMode}>
+                    Cancel Edit
+                  </Button>
+                  <Button 
+                    type="primary"
+                    icon={<BarChartOutlined />}
+                    onClick={() => {
+                      // Always capture current market data for scenarios
+                      if (selectedAsset && selectedAssetData) {
+                        const currentData = {
+                          scenarioName: scenarioName || `Manual_${selectedAsset.asset}_${new Date().toISOString().slice(0, 10)}`,
+                          asset: selectedAsset.asset,
+                          marketData: selectedAssetData,
+                          timestamp: new Date().toISOString(),
+                          isManualEdit: true
+                        };
+                        
+                        // Save to session storage for scenario analysis
+                        sessionStorage.setItem('editedMarketData', JSON.stringify(currentData));
+                        console.log('Captured market data for scenarios:', currentData);
+                      }
+                      
+                      // Close the modal and navigate to scenarios tab
+                      setIsDataModalOpen(false);
+                      setIsEditMode(false);
+                      setIsMarketDataModalEditable(false);
+                      
+                      // Switch to scenarios tab
+                      const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
+                      if (scenariosTab) scenariosTab.click();
+                      
+                      // Show message about data being available for scenarios
+                      Modal.info({
+                        title: 'Navigate to Scenarios',
+                        content: `Market data for ${selectedAsset?.asset} has been captured and is ready for scenario analysis. You can now run simulations with this data.`,
+                        okText: 'Go to Scenarios',
+                        className: 'dark-theme-modal',
+                        style: {
+                          backgroundColor: 'var(--bg-primary)',
+                          color: 'var(--text-primary)'
+                        },
+                        bodyStyle: {
+                          backgroundColor: 'var(--bg-primary)',
+                          color: 'var(--text-primary)'
+                        }
+                      });
+                    }}
+                  >
+                    Go to Scenarios
+                  </Button>
+                </>
               )}
             </Space>
           </div>
