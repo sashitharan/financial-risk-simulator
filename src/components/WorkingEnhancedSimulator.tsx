@@ -20,7 +20,8 @@ import {
   Badge,
   Progress,
   Empty,
-  Tooltip
+  Tooltip,
+  Radio
 } from "antd";
 import { 
   PlusOutlined, 
@@ -2201,7 +2202,7 @@ export default function WorkingEnhancedSimulator() {
                     <strong> Value:</strong> ${(selectedAsset.price * selectedAsset.quantity).toLocaleString()}
                     <br />
                     <Tag color="darkgreen" style={{ marginTop: '8px' }}>
-                      ✅ Ready for scenario analysis - Go to Scenarios tab to run simulations
+                      ✅ Ready for scenario analysis
                     </Tag>
                   </div>
                 }
@@ -2209,29 +2210,86 @@ export default function WorkingEnhancedSimulator() {
                 showIcon
                 style={{ marginTop: "16px" }}
                 action={
-                  <Space>
+                  <Button 
+                    size="small" 
+                    onClick={() => setSelectedAsset(null)}
+                  >
+                    Clear Selection
+                  </Button>
+                }
+              />
+            )}
+
+            {/* Scenario Scope Selection */}
+            <Card 
+              title="Scenario Analysis Options" 
+              size="small" 
+              style={{ marginTop: "16px" }}
+            >
+              <Row gutter={[16, 16]}>
+                <Col span={12}>
+                  <div style={{ marginBottom: '8px' }}>
+                    <strong>Analysis Scope:</strong>
+                  </div>
+                  <Radio.Group 
+                    value={scenarioScope} 
+                    onChange={(e) => setScenarioScope(e.target.value)}
+                    style={{ width: '100%' }}
+                  >
+                    <Space direction="vertical">
+                      <Radio value="single">
+                        <div>
+                          <strong>Single Asset Analysis</strong>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            Analyze only the selected asset: {selectedAsset?.asset || 'None selected'}
+                          </div>
+                        </div>
+                      </Radio>
+                      <Radio value="portfolio">
+                        <div>
+                          <strong>Portfolio-wide Analysis</strong>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            Analyze all assets in the portfolio
+                          </div>
+                        </div>
+                      </Radio>
+                    </Space>
+                  </Radio.Group>
+                </Col>
+                <Col span={12}>
+                  <div style={{ marginBottom: '8px' }}>
+                    <strong>Quick Actions:</strong>
+                  </div>
+                  <Space direction="vertical" style={{ width: '100%' }}>
                     <Button 
                       type="primary"
-                      size="small" 
                       icon={<BarChartOutlined />}
                       onClick={() => {
                         // Switch to scenarios tab
                         const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
                         if (scenariosTab) scenariosTab.click();
                       }}
+                      style={{ width: '100%' }}
                     >
-                      Go to Scenarios
+                      Run {scenarioScope === 'portfolio' ? 'Portfolio' : 'Asset'} Analysis
                     </Button>
                     <Button 
-                      size="small" 
-                      onClick={() => setSelectedAsset(null)}
+                      icon={<EyeOutlined />}
+                      onClick={() => {
+                        if (selectedAsset) {
+                          setIsDataModalOpen(true);
+                          setSelectedAssetData(getAssetMarketData(selectedAsset.asset, selectedAsset));
+                        }
+                      }}
+                      disabled={!selectedAsset}
+                      style={{ width: '100%' }}
                     >
-                      Clear Selection
+                      View Market Data
                     </Button>
                   </Space>
-                }
-              />
-            )}
+                </Col>
+              </Row>
+            </Card>
           </Card>
         </TabPane>
 
@@ -4409,105 +4467,9 @@ export default function WorkingEnhancedSimulator() {
               <Button onClick={() => setIsDataModalOpen(false)}>
                 Close
               </Button>
-              {!isEditMode && (
-                <Button 
-                  type="default" 
-                  icon={<ExperimentOutlined />}
-                  onClick={() => {
-                    // Always capture current market data for scenarios
-                    if (selectedAsset && selectedAssetData) {
-                      const currentData = {
-                        scenarioName: `Manual_${selectedAsset.asset}_${new Date().toISOString().slice(0, 10)}`,
-                        asset: selectedAsset.asset,
-                        marketData: selectedAssetData,
-                        timestamp: new Date().toISOString(),
-                        isManualEdit: true
-                      };
-                      
-                      // Save to session storage for scenario analysis
-                      sessionStorage.setItem('editedMarketData', JSON.stringify(currentData));
-                      console.log('Captured market data for scenarios:', currentData);
-                    }
-                    
-                    // Close the modal and navigate to scenarios tab
-                    setIsDataModalOpen(false);
-                    
-                    // Switch to scenarios tab
-                    const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
-                    if (scenariosTab) scenariosTab.click();
-                    
-                    // Show message about data being available for scenarios
-                    Modal.info({
-                      title: 'Navigate to Scenarios',
-                      content: `Market data for ${selectedAsset?.asset} has been captured and is ready for scenario analysis. You can now run simulations with this data.`,
-                      okText: 'Go to Scenarios',
-                      className: 'dark-theme-modal',
-                      style: {
-                        backgroundColor: 'var(--bg-primary)',
-                        color: 'var(--text-primary)'
-                      },
-                      bodyStyle: {
-                        backgroundColor: 'var(--bg-primary)',
-                        color: 'var(--text-primary)'
-                      }
-                    });
-                  }}
-                >
-                  Go to Scenarios
-                </Button>
-              )}
               {isEditMode && (
                 <Button onClick={exitEditMode}>
                   Cancel Edit
-                </Button>
-              )}
-              {isEditMode && (
-                <Button 
-                  type="default" 
-                  icon={<ExperimentOutlined />}
-                  onClick={() => {
-                    // Always capture current market data for scenarios
-                    if (selectedAsset && selectedAssetData) {
-                      const currentData = {
-                        scenarioName: scenarioName || `Manual_${selectedAsset.asset}_${new Date().toISOString().slice(0, 10)}`,
-                        asset: selectedAsset.asset,
-                        marketData: selectedAssetData,
-                        timestamp: new Date().toISOString(),
-                        isManualEdit: true
-                      };
-                      
-                      // Save to session storage for scenario analysis
-                      sessionStorage.setItem('editedMarketData', JSON.stringify(currentData));
-                      console.log('Captured market data for scenarios:', currentData);
-                    }
-                    
-                    // Close the modal and navigate to scenarios tab
-                    setIsDataModalOpen(false);
-                    setIsEditMode(false);
-                    setIsMarketDataModalEditable(false);
-                    
-                    // Switch to scenarios tab
-                    const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
-                    if (scenariosTab) scenariosTab.click();
-                    
-                    // Show message about data being available for scenarios
-                    Modal.info({
-                      title: 'Navigate to Scenarios',
-                      content: `Market data for ${selectedAsset?.asset} has been captured and is ready for scenario analysis. You can now run simulations with this data.`,
-                      okText: 'Go to Scenarios',
-                      className: 'dark-theme-modal',
-                      style: {
-                        backgroundColor: 'var(--bg-primary)',
-                        color: 'var(--text-primary)'
-                      },
-                      bodyStyle: {
-                        backgroundColor: 'var(--bg-primary)',
-                        color: 'var(--text-primary)'
-                      }
-                    });
-                  }}
-                >
-                  Go to Scenarios
                 </Button>
               )}
             </Space>
