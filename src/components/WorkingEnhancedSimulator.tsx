@@ -893,6 +893,14 @@ export default function WorkingEnhancedSimulator() {
                     const editedPrice = record?.editedPrice;
                     const displayPrice = isEditedData && editedPrice ? editedPrice : value;
                     
+                    console.log(`🔍 SCENARIO DETAILS DISPLAY for ${record?.asset}:`, {
+                      value: value,
+                      isEditedData: isEditedData,
+                      editedPrice: editedPrice,
+                      displayPrice: displayPrice,
+                      record: record
+                    });
+                    
                     return (
                       <span style={{ color: 'var(--text-primary)' }}>
                         {displayPrice ? `$${Number(displayPrice).toFixed(2)}` : 'N/A'}
@@ -1255,6 +1263,14 @@ export default function WorkingEnhancedSimulator() {
       
       // Determine the original price (edited price if available, otherwise position price)
       const originalPrice = usingEditedData && editedPrice ? editedPrice : pos.price;
+
+      console.log(`🔍 PRICE CALCULATION for ${pos.asset}:`, {
+        positionPrice: pos.price,
+        editedPrice: editedPrice,
+        usingEditedData: usingEditedData,
+        originalPrice: originalPrice,
+        shockedPrice: shockedPrice
+      });
 
       const result = {
         asset: pos.asset,
