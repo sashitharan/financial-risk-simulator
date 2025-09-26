@@ -1110,28 +1110,32 @@ export default function WorkingEnhancedSimulator() {
       
       // Check if this asset has edited market data in session storage
       let usingEditedData = false;
+      let editedPrice = null;
       if (editedData && editedData.asset === pos.asset) {
         console.log(`Using edited market data for ${pos.asset}:`, editedData);
         
         // Handle different types of edited data
         if (editedData.marketData && editedData.marketData.spot) {
           // Equity market data (spot, bid, ask)
-          const editedPrice = editedData.marketData.spot;
-          shockedPrice = editedPrice * (1 + shock);
+          editedPrice = editedData.marketData.spot;
+          // Apply shock to the ORIGINAL position price, not the edited price
+          shockedPrice = pos.price * (1 + shock);
           usingEditedData = true;
-          console.log(`Edited equity data calculation: ${editedPrice} * (1 + ${shock}) = ${shockedPrice}`);
+          console.log(`Edited equity data calculation: Original ${pos.price} * (1 + ${shock}) = ${shockedPrice}, Edited price: ${editedPrice}`);
         } else if (editedData.volatility) {
           // Volatility data - use volatility impact on price
           const volImpact = editedData.volatility.volMatrix[0][0] || 0; // Use first vol point as example
+          editedPrice = pos.price * (1 + (volImpact - 0.2) * 0.1); // Calculate edited price from vol impact
           shockedPrice = pos.price * (1 + shock + (volImpact - 0.2) * 0.1); // Vol impact
           usingEditedData = true;
-          console.log(`Edited volatility data calculation: ${pos.price} * (1 + ${shock} + vol_impact) = ${shockedPrice}`);
+          console.log(`Edited volatility data calculation: Original ${pos.price} * (1 + ${shock} + vol_impact) = ${shockedPrice}, Edited price: ${editedPrice}`);
         } else if (editedData.interestRates) {
           // Interest rate data - use rate impact on price
           const rateImpact = editedData.interestRates[0]?.curve[0]?.rate || 0;
+          editedPrice = pos.price * (1 + (rateImpact - 0.05) * 0.1); // Calculate edited price from rate impact
           shockedPrice = pos.price * (1 + shock + (rateImpact - 0.05) * 0.1); // Rate impact
           usingEditedData = true;
-          console.log(`Edited interest rate data calculation: ${pos.price} * (1 + ${shock} + rate_impact) = ${shockedPrice}`);
+          console.log(`Edited interest rate data calculation: Original ${pos.price} * (1 + ${shock} + rate_impact) = ${shockedPrice}, Edited price: ${editedPrice}`);
         }
       }
       
@@ -1247,9 +1251,7 @@ export default function WorkingEnhancedSimulator() {
       const impact = (shockedPrice - pos.price) * pos.quantity;
       
       // Determine the original price (edited price if available, otherwise position price)
-      const originalPrice = (editedData && editedData.asset === pos.asset && editedData.marketData) 
-        ? editedData.marketData.spot || pos.price 
-        : pos.price;
+      const originalPrice = usingEditedData && editedPrice ? editedPrice : pos.price;
 
       return {
         asset: pos.asset,
@@ -1260,8 +1262,8 @@ export default function WorkingEnhancedSimulator() {
         newPrice: shockedPrice,
         originalValue: originalPrice * pos.quantity,
         shockedValue: shockedPrice * pos.quantity,
-        isEditedData: !!(editedData && editedData.asset === pos.asset && editedData.marketData),
-        editedPrice: (editedData && editedData.asset === pos.asset && editedData.marketData) ? editedData.marketData.spot : null,
+        isEditedData: usingEditedData,
+        editedPrice: editedPrice,
         riskMetrics: {
           delta: riskMetrics.delta || 0,
           gamma: riskMetrics.gamma || 0,
