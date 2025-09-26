@@ -448,7 +448,6 @@ export default function WorkingEnhancedSimulator() {
 
   // Manual scenario editing state
   // const [isEditingMarketData, setIsEditingMarketData] = useState(false); // Removed - using new editing system
-  const [manualScenarioName, setManualScenarioName] = useState("");
   const [isMarketDataModalEditable, setIsMarketDataModalEditable] = useState(false);
   const [scenarioName, setScenarioName] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
@@ -1433,105 +1432,6 @@ export default function WorkingEnhancedSimulator() {
   };
 
 
-  const runManualScenario = () => {
-    if (!selectedAssetData || !manualScenarioName.trim()) {
-      console.error('Please provide scenario name and ensure market data is loaded');
-      return;
-    }
-
-    // Run simulation with edited market data from the modal
-    const newResults: Result[] = positions.map(pos => {
-      const asset = pos.asset;
-      const originalPrice = pos.price;
-      
-      // Get edited price for this asset - use the selected asset's edited data
-      let editedPrice = originalPrice;
-      if (selectedAsset && selectedAsset.asset === asset) {
-        // If this is the asset we edited, use the edited spot price directly
-        if (selectedAssetData.marketData && selectedAssetData.marketData.spot) {
-          editedPrice = selectedAssetData.marketData.spot;
-        } else {
-          // Fallback: apply shock based on volatility changes
-          const volChange = selectedAssetData.volatility ? 
-            (selectedAssetData.volatility.volMatrix[0][0] - 25.0) / 25.0 : 0;
-          editedPrice = originalPrice * (1 + volChange * 0.1);
-        }
-      }
-
-      const priceChange = editedPrice - originalPrice;
-      const impact = priceChange * pos.quantity;
-
-      return {
-        asset,
-        quantity: pos.quantity,
-        shock: priceChange / originalPrice,
-        impact,
-        originalPrice,
-        newPrice: editedPrice,
-        originalValue: originalPrice * pos.quantity,
-        shockedValue: editedPrice * pos.quantity,
-        riskMetrics: {
-          delta: pos.riskFactors.delta || 0,
-          gamma: pos.riskFactors.gamma || 0,
-          duration: pos.riskFactors.duration || 0,
-          convexity: 0,
-          vega: 0,
-          theta: 0
-        }
-      };
-    });
-
-    setResults(newResults);
-    
-    // Set the selected scenario for display
-    setSelectedScenario({ 
-      id: 'manual-edit', 
-      name: manualScenarioName, 
-      shock: 0, 
-      description: 'Manual market data edit', 
-      category: 'custom', 
-      icon: <ExperimentOutlined />, 
-      type: 'manual' 
-    });
-    
-    // Record in scenario history
-    const totalImpact = newResults.reduce((sum, r) => sum + r.impact, 0);
-    const scenarioRecord = {
-      id: `manual-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      scenarioName: manualScenarioName || 'Manual Edit Scenario',
-      scenarioType: 'manual-edit',
-      scope: 'single',
-      scenarioScope: 'single', // Add for consistency
-      selectedAsset: selectedAsset?.asset || null,
-      shockValue: 'Manual Edit',
-      totalImpact,
-      results: newResults,
-      assetsAnalyzed: 1,
-      metadata: {
-        editedAsset: selectedAsset?.asset,
-        originalPrice: selectedAsset?.price,
-        newPrice: selectedAssetData?.marketData?.spot,
-        editedFields: ['spot', 'bid', 'ask', 'dealSpot', 'notional']
-      }
-    };
-    
-    setScenarioHistory(prev => [scenarioRecord, ...prev]);
-    
-    setIsDataModalOpen(false);
-    setIsMarketDataModalEditable(false);
-    
-    // Switch to risk metrics tab
-    const riskTab = document.querySelector('[data-node-key="risk"]') as HTMLElement;
-    if (riskTab) riskTab.click();
-    
-    // Show success message
-    Modal.success({
-      title: 'Manual Scenario Executed',
-      content: `Scenario "${manualScenarioName}" has been executed successfully with your edited market data.`,
-      okText: 'View Results'
-    });
-  };
 
 
   const getAssetMarketData = (asset: string, position: Position) => {
@@ -1784,76 +1684,6 @@ export default function WorkingEnhancedSimulator() {
     }
   };
 
-  // Run manual scenario from edit mode
-  const runManualScenarioFromEdit = () => {
-    if (!hasMarketDataChanges) {
-      Modal.warning({
-        title: 'No Changes',
-        content: 'Please make some changes to the market data before running the scenario.',
-        okText: 'OK',
-        className: 'dark-theme-modal',
-        style: {
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)'
-        },
-        bodyStyle: {
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)'
-        }
-      });
-      return;
-    }
-
-    if (!scenarioName.trim()) {
-      Modal.warning({
-        title: 'Scenario Name Required',
-        content: 'Please enter a scenario name before running the scenario.',
-        okText: 'OK',
-        className: 'dark-theme-modal',
-        style: {
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)'
-        },
-        bodyStyle: {
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)'
-        }
-      });
-      return;
-    }
-
-    try {
-      // Set the scenario name for runManualScenario
-      setManualScenarioName(scenarioName.trim());
-      
-      // Run the manual scenario with edited market data
-      runManualScenario();
-      
-      // Close the modal and reset state
-      setIsDataModalOpen(false);
-      setIsEditMode(false);
-      setIsMarketDataModalEditable(false);
-      setScenarioName("");
-      setHasMarketDataChanges(false);
-      
-    } catch (error) {
-      console.error('Error running manual scenario:', error);
-      Modal.error({
-        title: 'Error',
-        content: 'Failed to run manual scenario. Please try again.',
-        okText: 'OK',
-        className: 'dark-theme-modal',
-        style: {
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)'
-        },
-        bodyStyle: {
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)'
-        }
-      });
-    }
-  };
 
 
 
@@ -4632,66 +4462,53 @@ export default function WorkingEnhancedSimulator() {
                 </Button>
               )}
               {isEditMode && (
-                <>
-                  <Button 
-                    type="primary" 
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => {
-                      console.log('Run Manual Scenario clicked:', { hasMarketDataChanges, scenarioName });
-                      runManualScenarioFromEdit();
-                    }}
-                    disabled={!hasMarketDataChanges}
-                  >
-                    Run Manual Scenario {hasMarketDataChanges ? '(Ready)' : '(No Changes)'}
-                  </Button>
-                  <Button 
-                    type="default" 
-                    icon={<ExperimentOutlined />}
-                    onClick={() => {
-                      // Always capture current market data for scenarios
-                      if (selectedAsset && selectedAssetData) {
-                        const currentData = {
-                          scenarioName: scenarioName || `Manual_${selectedAsset.asset}_${new Date().toISOString().slice(0, 10)}`,
-                          asset: selectedAsset.asset,
-                          marketData: selectedAssetData,
-                          timestamp: new Date().toISOString(),
-                          isManualEdit: true
-                        };
-                        
-                        // Save to session storage for scenario analysis
-                        sessionStorage.setItem('editedMarketData', JSON.stringify(currentData));
-                        console.log('Captured market data for scenarios:', currentData);
+                <Button 
+                  type="default" 
+                  icon={<ExperimentOutlined />}
+                  onClick={() => {
+                    // Always capture current market data for scenarios
+                    if (selectedAsset && selectedAssetData) {
+                      const currentData = {
+                        scenarioName: scenarioName || `Manual_${selectedAsset.asset}_${new Date().toISOString().slice(0, 10)}`,
+                        asset: selectedAsset.asset,
+                        marketData: selectedAssetData,
+                        timestamp: new Date().toISOString(),
+                        isManualEdit: true
+                      };
+                      
+                      // Save to session storage for scenario analysis
+                      sessionStorage.setItem('editedMarketData', JSON.stringify(currentData));
+                      console.log('Captured market data for scenarios:', currentData);
+                    }
+                    
+                    // Close the modal and navigate to scenarios tab
+                    setIsDataModalOpen(false);
+                    setIsEditMode(false);
+                    setIsMarketDataModalEditable(false);
+                    
+                    // Switch to scenarios tab
+                    const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
+                    if (scenariosTab) scenariosTab.click();
+                    
+                    // Show message about data being available for scenarios
+                    Modal.info({
+                      title: 'Navigate to Scenarios',
+                      content: `Market data for ${selectedAsset?.asset} has been captured and is ready for scenario analysis. You can now run simulations with this data.`,
+                      okText: 'Go to Scenarios',
+                      className: 'dark-theme-modal',
+                      style: {
+                        backgroundColor: 'var(--bg-primary)',
+                        color: 'var(--text-primary)'
+                      },
+                      bodyStyle: {
+                        backgroundColor: 'var(--bg-primary)',
+                        color: 'var(--text-primary)'
                       }
-                      
-                      // Close the modal and navigate to scenarios tab
-                      setIsDataModalOpen(false);
-                      setIsEditMode(false);
-                      setIsMarketDataModalEditable(false);
-                      
-                      // Switch to scenarios tab
-                      const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
-                      if (scenariosTab) scenariosTab.click();
-                      
-                      // Show message about data being available for scenarios
-                      Modal.info({
-                        title: 'Navigate to Scenarios',
-                        content: `Market data for ${selectedAsset?.asset} has been captured and is ready for scenario analysis. You can now run simulations with this data.`,
-                        okText: 'Go to Scenarios',
-                        className: 'dark-theme-modal',
-                        style: {
-                          backgroundColor: 'var(--bg-primary)',
-                          color: 'var(--text-primary)'
-                        },
-                        bodyStyle: {
-                          backgroundColor: 'var(--bg-primary)',
-                          color: 'var(--text-primary)'
-                        }
-                      });
-                    }}
-                  >
-                    Go to Scenarios
-                  </Button>
-                </>
+                    });
+                  }}
+                >
+                  Go to Scenarios
+                </Button>
               )}
             </Space>
           </div>
