@@ -271,6 +271,10 @@ type Result = {
   impact: number;
   originalValue: number;
   shockedValue: number;
+  originalPrice?: number;
+  newPrice?: number;
+  isEditedData?: boolean;
+  editedPrice?: number;
   riskMetrics: {
     delta: number;
     gamma: number;
@@ -313,6 +317,11 @@ const getMarketData = () => {
 const MARKET_DATA = getMarketData();
 
 export default function WorkingEnhancedSimulator() {
+  // State for editing functionality
+  
+  // Market data editing state
+  const [hasMarketDataChanges, setHasMarketDataChanges] = useState(false);
+
   // Initialize portfolio STRICTLY from market-data.json assets only
   const [positions, setPositions] = useState<Position[]>(() => {
     const initialPositions: Position[] = [];
@@ -414,6 +423,7 @@ export default function WorkingEnhancedSimulator() {
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const [selectedAssetData, setSelectedAssetData] = useState<any>(null);
   const [selectedAsset, setSelectedAsset] = useState<Position | null>(null);
+
   
   // Backtesting state
   const [selectedBacktestScenario, setSelectedBacktestScenario] = useState<any>(null);
@@ -437,10 +447,28 @@ export default function WorkingEnhancedSimulator() {
   const [availableDeals, setAvailableDeals] = useState<any[]>([]);
 
   // Manual scenario editing state
-  const [isEditingMarketData, setIsEditingMarketData] = useState(false);
+  // const [isEditingMarketData, setIsEditingMarketData] = useState(false); // Removed - using new editing system
   const [manualScenarioName, setManualScenarioName] = useState("");
   const [isMarketDataModalEditable, setIsMarketDataModalEditable] = useState(false);
+  const [scenarioName, setScenarioName] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
   const [form] = Form.useForm();
+
+  // Initialize market data when modal opens
+  useEffect(() => {
+    if (isDataModalOpen && selectedAssetData) {
+      console.log('Modal opened, initializing market data with:', selectedAssetData);
+      initializeMarketData(selectedAssetData);
+    }
+  }, [isDataModalOpen, selectedAssetData]);
+
+  // Also initialize when selectedAssetData changes
+  useEffect(() => {
+    if (selectedAssetData && selectedAssetData.marketData) {
+      console.log('Asset data changed, reinitializing market data');
+      initializeMarketData(selectedAssetData);
+    }
+  }, [selectedAssetData]);
 
   // Load available deals from Murex payload
   useEffect(() => {
@@ -541,7 +569,9 @@ export default function WorkingEnhancedSimulator() {
         record.scenarioType,
         record.scenarioScope,
         record.selectedAsset || 'All',
-        record.shockValue ? (record.shockValue * 100).toFixed(2) : 'N/A',
+        record.shockValue && typeof record.shockValue === 'number' 
+          ? (record.shockValue * 100).toFixed(2) 
+          : record.shockValue || 'N/A',
         record.totalImpact,
         record.maxLoss,
         record.assetsAnalyzed,
@@ -583,6 +613,15 @@ export default function WorkingEnhancedSimulator() {
       Modal.error({
         title: 'Error',
         content: 'No scenario data available to display.',
+        className: 'dark-theme-modal',
+        style: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        },
+        bodyStyle: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        }
       });
       return;
     }
@@ -637,8 +676,11 @@ export default function WorkingEnhancedSimulator() {
             </Descriptions.Item>
             {!isBacktesting && record.shockValue !== null && record.shockValue !== undefined && (
               <Descriptions.Item label="Shock Value" style={{ color: 'var(--text-primary)' }}>
-                <Tag color={Number(record.shockValue) >= 0 ? 'red' : 'green'}>
-                  {(Number(record.shockValue) * 100).toFixed(2)}%
+                <Tag color={typeof record.shockValue === 'number' && Number(record.shockValue) >= 0 ? 'red' : 'green'}>
+                  {typeof record.shockValue === 'number' 
+                    ? (Number(record.shockValue) * 100).toFixed(2) + '%'
+                    : record.shockValue
+                  }
                 </Tag>
               </Descriptions.Item>
             )}
@@ -845,11 +887,23 @@ export default function WorkingEnhancedSimulator() {
                   title: 'Original Price', 
                   dataIndex: 'originalPrice', 
                   key: 'originalPrice', 
-                  render: (value) => (
-                    <span style={{ color: 'var(--text-primary)' }}>
-                      {value ? `$${Number(value).toFixed(2)}` : 'N/A'}
-                    </span>
-                  )
+                  render: (value, record: any) => {
+                    // If this record uses edited data, show the edited price as original
+                    const isEditedData = record?.isEditedData;
+                    const editedPrice = record?.editedPrice;
+                    const displayPrice = isEditedData && editedPrice ? editedPrice : value;
+                    
+                    return (
+                      <span style={{ color: 'var(--text-primary)' }}>
+                        {displayPrice ? `$${Number(displayPrice).toFixed(2)}` : 'N/A'}
+                        {isEditedData && editedPrice && (
+                          <Tag color="blue" style={{ marginLeft: 8 }}>
+                            Edited
+                          </Tag>
+                        )}
+                      </span>
+                    );
+                  }
                 },
                 { 
                   title: 'New Price', 
@@ -900,6 +954,15 @@ export default function WorkingEnhancedSimulator() {
       Modal.error({
         title: 'Error',
         content: 'Failed to open scenario details. Please try again.',
+        className: 'dark-theme-modal',
+        style: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        },
+        bodyStyle: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        }
       });
     }
   };
@@ -942,7 +1005,7 @@ export default function WorkingEnhancedSimulator() {
           type: 'custom'
         });
         setCustomScenarioName(record.scenarioName);
-        setCustomShock(record.shockValue * 100);
+        setCustomShock(typeof record.shockValue === 'number' ? record.shockValue * 100 : 0);
       }
       
       setScenarioScope(record.scenarioScope);
@@ -959,15 +1022,51 @@ export default function WorkingEnhancedSimulator() {
   };
 
   const runSimulation = () => {
+    console.log('runSimulation called with:', {
+      scenarioScope,
+      selectedAsset: selectedAsset?.asset,
+      selectedScenario: selectedScenario.name,
+      customScenarioName,
+      positions: positions.length
+    });
+    
     // Check if single asset mode requires asset selection
     if (scenarioScope === 'single' && !selectedAsset) {
       console.error('No asset selected for single asset simulation');
+      Modal.warning({
+        title: 'No Asset Selected',
+        content: 'Please select an asset for single asset simulation.',
+        okText: 'OK',
+        className: 'dark-theme-modal',
+        style: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        },
+        bodyStyle: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        }
+      });
       return;
     }
     
     // Check if custom scenario has a name when using custom
     if (selectedScenario.name === "Custom" && !customScenarioName.trim()) {
       console.error('Please provide a custom scenario name');
+      Modal.warning({
+        title: 'Scenario Name Required',
+        content: 'Please enter a name for your custom scenario.',
+        okText: 'OK',
+        className: 'dark-theme-modal',
+        style: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        },
+        bodyStyle: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        }
+      });
       return;
     }
     
@@ -976,19 +1075,70 @@ export default function WorkingEnhancedSimulator() {
     console.log('Selected asset:', selectedAsset?.asset || 'Portfolio-wide');
     console.log('Using market data:', MARKET_DATA);
     
+  // Check for edited market data in session storage
+  const getEditedMarketData = () => {
+    try {
+      const stored = sessionStorage.getItem('editedMarketData');
+      if (stored) {
+        const editedData = JSON.parse(stored);
+        console.log('Found edited market data in session storage:', editedData);
+        return editedData;
+      }
+    } catch (error) {
+      console.error('Error loading edited market data from session storage:', error);
+    }
+    return null;
+  };
+
+  const editedData = getEditedMarketData();
+  if (editedData) {
+    console.log('Using edited market data for simulation:', editedData);
+  }
+    
     const shock = selectedScenario.name === "Custom" ? customShock / 100 : selectedScenario.shock;
     
     // Determine which assets to analyze
     const assetsToAnalyze = scenarioScope === 'portfolio' ? positions : [selectedAsset];
+    console.log('Assets to analyze:', assetsToAnalyze.map(a => a?.asset));
     
     // Enhanced calculation with real Murex market data integration
     const calc = assetsToAnalyze.filter(pos => pos !== null).map((pos) => {
+      console.log(`Processing asset: ${pos.asset}`);
       let shockedPrice = pos.price;
       let shockValue = shock;
       let riskMetrics = { ...pos.riskFactors };
       
+      // Check if this asset has edited market data in session storage
+      let usingEditedData = false;
+      if (editedData && editedData.asset === pos.asset) {
+        console.log(`Using edited market data for ${pos.asset}:`, editedData);
+        
+        // Handle different types of edited data
+        if (editedData.marketData && editedData.marketData.spot) {
+          // Equity market data (spot, bid, ask)
+          const editedPrice = editedData.marketData.spot;
+          shockedPrice = editedPrice * (1 + shock);
+          usingEditedData = true;
+          console.log(`Edited equity data calculation: ${editedPrice} * (1 + ${shock}) = ${shockedPrice}`);
+        } else if (editedData.volatility) {
+          // Volatility data - use volatility impact on price
+          const volImpact = editedData.volatility.volMatrix[0][0] || 0; // Use first vol point as example
+          shockedPrice = pos.price * (1 + shock + (volImpact - 0.2) * 0.1); // Vol impact
+          usingEditedData = true;
+          console.log(`Edited volatility data calculation: ${pos.price} * (1 + ${shock} + vol_impact) = ${shockedPrice}`);
+        } else if (editedData.interestRates) {
+          // Interest rate data - use rate impact on price
+          const rateImpact = editedData.interestRates[0]?.curve[0]?.rate || 0;
+          shockedPrice = pos.price * (1 + shock + (rateImpact - 0.05) * 0.1); // Rate impact
+          usingEditedData = true;
+          console.log(`Edited interest rate data calculation: ${pos.price} * (1 + ${shock} + rate_impact) = ${shockedPrice}`);
+        }
+      }
+      
       // Apply different shock logic based on scenario category and instrument type
-      switch (selectedScenario.category) {
+      // Skip this if we're using edited data (already calculated above)
+      if (!usingEditedData) {
+        switch (selectedScenario.category) {
         case 'equity':
           // Use TSM UN specific data for equity scenarios
           if (pos.asset.includes('TSM UN')) {
@@ -1085,6 +1235,7 @@ export default function WorkingEnhancedSimulator() {
           
         default:
           shockedPrice = pos.price * (1 + shock);
+        }
       }
       
       // Add time decay for options
@@ -1095,15 +1246,22 @@ export default function WorkingEnhancedSimulator() {
       
       const impact = (shockedPrice - pos.price) * pos.quantity;
       
+      // Determine the original price (edited price if available, otherwise position price)
+      const originalPrice = (editedData && editedData.asset === pos.asset && editedData.marketData) 
+        ? editedData.marketData.spot || pos.price 
+        : pos.price;
+
       return {
         asset: pos.asset,
         quantity: pos.quantity,
         shock: shockValue,
         impact,
-        originalPrice: pos.price,
+        originalPrice: originalPrice,
         newPrice: shockedPrice,
-        originalValue: pos.price * pos.quantity,
+        originalValue: originalPrice * pos.quantity,
         shockedValue: shockedPrice * pos.quantity,
+        isEditedData: !!(editedData && editedData.asset === pos.asset && editedData.marketData),
+        editedPrice: (editedData && editedData.asset === pos.asset && editedData.marketData) ? editedData.marketData.spot : null,
         riskMetrics: {
           delta: riskMetrics.delta || 0,
           gamma: riskMetrics.gamma || 0,
@@ -1119,20 +1277,41 @@ export default function WorkingEnhancedSimulator() {
     setResults(calc);
     
     // Record scenario execution in history
+    let scenarioName = selectedScenario.name === "Custom" ? customScenarioName : selectedScenario.name;
+    
+    // If we have edited data, combine manual scenario name with the scenario performed
+    if (editedData && editedData.scenarioName) {
+      const scenarioType = selectedScenario.category || 'equity';
+      const shockPercent = selectedScenario.name === "Custom" ? customShock : (selectedScenario.shock * 100);
+      const shockSign = shockPercent >= 0 ? '+' : '';
+      scenarioName = `${editedData.scenarioName}_${scenarioType}_${shockSign}${shockPercent}%`;
+    }
+    
+    const shockValue = selectedScenario.name === "Custom" ? customShock / 100 : selectedScenario.shock;
+    
     const scenarioRecord = {
       id: `scenario-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      scenarioName: selectedScenario.name === "Custom" ? customScenarioName : selectedScenario.name,
+      scenarioName: scenarioName || 'Unnamed Scenario',
       scenarioType: selectedScenario.category || 'custom',
       scenarioScope: scenarioScope,
-      shockValue: selectedScenario.name === "Custom" ? customShock / 100 : selectedScenario.shock,
+      shockValue: shockValue,
       assetsAnalyzed: scenarioScope === 'portfolio' ? positions.length : 1,
       selectedAsset: scenarioScope === 'single' ? selectedAsset?.asset : null,
       results: calc,
       totalImpact: calc.reduce((sum, result) => sum + result.impact, 0),
       maxLoss: Math.min(...calc.map(result => result.impact)),
       userAgent: navigator.userAgent,
-      sessionId: `session-${Date.now()}`
+      sessionId: `session-${Date.now()}`,
+      metadata: {
+        usesEditedData: !!editedData,
+        editedDataAsset: editedData?.asset,
+        editedDataTimestamp: editedData?.timestamp,
+        editedDataScenarioName: editedData?.scenarioName,
+        editedPrice: editedData?.marketData?.spot,
+        originalScenarioName: selectedScenario.name,
+        combinedScenarioName: scenarioName
+      }
     };
     
     setScenarioHistory(prev => [scenarioRecord, ...prev.slice(0, 99)]); // Keep last 100 records
@@ -1187,9 +1366,6 @@ export default function WorkingEnhancedSimulator() {
     });
   };
 
-  const deletePosition = (key: string) => {
-    setPositions(positions.filter(pos => pos.key !== key));
-  };
 
   // Manual scenario editing functions
 
@@ -1201,6 +1377,22 @@ export default function WorkingEnhancedSimulator() {
     const updatedAssetData = { ...selectedAssetData };
     updatedAssetData.volatility.volMatrix[maturityIndex][strikeIndex] = value;
     setSelectedAssetData(updatedAssetData);
+    
+    // Set market data changes to enable "Go to Scenarios" button
+    setHasMarketDataChanges(true);
+    console.log('Volatility data updated, hasMarketDataChanges set to true');
+    
+    // Save edited volatility data to session storage
+    const editedData = {
+      asset: selectedAsset?.asset,
+      marketData: updatedAssetData.marketData,
+      volatility: updatedAssetData.volatility,
+      timestamp: new Date().toISOString(),
+      scenarioName: scenarioName
+    };
+    
+    sessionStorage.setItem('editedMarketData', JSON.stringify(editedData));
+    console.log('Edited volatility data saved to session storage:', editedData);
   };
 
   const updateInterestRateData = (currency: string, rateIndex: number, value: number) => {
@@ -1211,6 +1403,22 @@ export default function WorkingEnhancedSimulator() {
     if (rateData) {
       rateData.curve[rateIndex].rate = value;
       setSelectedAssetData(updatedAssetData);
+      
+      // Set market data changes to enable "Go to Scenarios" button
+      setHasMarketDataChanges(true);
+      console.log('Interest rate data updated, hasMarketDataChanges set to true');
+      
+      // Save edited interest rate data to session storage
+      const editedData = {
+        asset: selectedAsset?.asset,
+        marketData: updatedAssetData.marketData,
+        interestRates: updatedAssetData.interestRates,
+        timestamp: new Date().toISOString(),
+        scenarioName: scenarioName
+      };
+      
+      sessionStorage.setItem('editedMarketData', JSON.stringify(editedData));
+      console.log('Edited interest rate data saved to session storage:', editedData);
     }
   };
 
@@ -1224,25 +1432,6 @@ export default function WorkingEnhancedSimulator() {
     }
   };
 
-  const updateEquityMarketData = (field: string, value: any) => {
-    if (!selectedAssetData) return;
-    
-    const updatedAssetData = { ...selectedAssetData };
-    if (updatedAssetData.marketData) {
-      updatedAssetData.marketData[field] = value;
-      
-      // Auto-calculate spread when bid or ask is updated
-      if (field === 'bid' || field === 'ask') {
-        const bid = field === 'bid' ? value : updatedAssetData.marketData.bid;
-        const ask = field === 'ask' ? value : updatedAssetData.marketData.ask;
-        if (bid && ask) {
-          updatedAssetData.marketData.spread = ask - bid;
-        }
-      }
-      
-      setSelectedAssetData(updatedAssetData);
-    }
-  };
 
   const runManualScenario = () => {
     if (!selectedAssetData || !manualScenarioName.trim()) {
@@ -1293,9 +1482,44 @@ export default function WorkingEnhancedSimulator() {
     });
 
     setResults(newResults);
+    
+    // Set the selected scenario for display
+    setSelectedScenario({ 
+      id: 'manual-edit', 
+      name: manualScenarioName, 
+      shock: 0, 
+      description: 'Manual market data edit', 
+      category: 'custom', 
+      icon: <ExperimentOutlined />, 
+      type: 'manual' 
+    });
+    
+    // Record in scenario history
+    const totalImpact = newResults.reduce((sum, r) => sum + r.impact, 0);
+    const scenarioRecord = {
+      id: `manual-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      scenarioName: manualScenarioName || 'Manual Edit Scenario',
+      scenarioType: 'manual-edit',
+      scope: 'single',
+      scenarioScope: 'single', // Add for consistency
+      selectedAsset: selectedAsset?.asset || null,
+      shockValue: 'Manual Edit',
+      totalImpact,
+      results: newResults,
+      assetsAnalyzed: 1,
+      metadata: {
+        editedAsset: selectedAsset?.asset,
+        originalPrice: selectedAsset?.price,
+        newPrice: selectedAssetData?.marketData?.spot,
+        editedFields: ['spot', 'bid', 'ask', 'dealSpot', 'notional']
+      }
+    };
+    
+    setScenarioHistory(prev => [scenarioRecord, ...prev]);
+    
     setIsDataModalOpen(false);
     setIsMarketDataModalEditable(false);
-    setIsEditingMarketData(false);
     
     // Switch to risk metrics tab
     const riskTab = document.querySelector('[data-node-key="risk"]') as HTMLElement;
@@ -1496,7 +1720,202 @@ export default function WorkingEnhancedSimulator() {
   const handleAssetClick = (position: Position) => {
     const marketData = getAssetMarketData(position.asset, position);
     setSelectedAssetData(marketData);
+    initializeMarketData(marketData);
     setIsDataModalOpen(true);
+  };
+
+  // Double-click editing functions
+
+
+  // Mode switching functions
+  const enterEditMode = () => {
+    setIsEditMode(true);
+    setIsMarketDataModalEditable(true);
+  };
+
+  const exitEditMode = () => {
+    setIsEditMode(false);
+    setIsMarketDataModalEditable(false);
+    setScenarioName("");
+    setHasMarketDataChanges(false);
+    
+    // Clear edited data from session storage
+    sessionStorage.removeItem('editedMarketData');
+    console.log('Cleared edited market data from session storage');
+    
+    // Reset to original data if needed
+    if (selectedAsset) {
+      setSelectedAssetData(getAssetMarketData(selectedAsset.asset, selectedAsset));
+    }
+  };
+
+  // Market data editing function
+  const updateEquityMarketData = (field: string, value: any) => {
+    if (!selectedAssetData) return;
+    
+    console.log('updateEquityMarketData called:', { field, value, hasMarketDataChanges });
+    
+    const updatedAssetData = { ...selectedAssetData };
+    if (updatedAssetData.marketData) {
+      updatedAssetData.marketData[field] = value;
+      
+      // Auto-calculate spread when bid or ask is updated
+      if (field === 'bid' || field === 'ask') {
+        const bid = field === 'bid' ? value : updatedAssetData.marketData.bid;
+        const ask = field === 'ask' ? value : updatedAssetData.marketData.ask;
+        if (bid && ask) {
+          updatedAssetData.marketData.spread = ask - bid;
+        }
+      }
+      
+      setSelectedAssetData(updatedAssetData);
+      setHasMarketDataChanges(true);
+      
+      // Save edited market data to session storage
+      const editedData = {
+        asset: selectedAsset?.asset,
+        marketData: updatedAssetData.marketData,
+        timestamp: new Date().toISOString(),
+        scenarioName: scenarioName
+      };
+      
+      sessionStorage.setItem('editedMarketData', JSON.stringify(editedData));
+      console.log('Edited market data saved to session storage:', editedData);
+    }
+  };
+
+  // Run manual scenario from edit mode
+  const runManualScenarioFromEdit = () => {
+    if (!hasMarketDataChanges) {
+      Modal.warning({
+        title: 'No Changes',
+        content: 'Please make some changes to the market data before running the scenario.',
+        okText: 'OK',
+        className: 'dark-theme-modal',
+        style: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        },
+        bodyStyle: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        }
+      });
+      return;
+    }
+
+    if (!scenarioName.trim()) {
+      Modal.warning({
+        title: 'Scenario Name Required',
+        content: 'Please enter a scenario name before running the scenario.',
+        okText: 'OK',
+        className: 'dark-theme-modal',
+        style: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        },
+        bodyStyle: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        }
+      });
+      return;
+    }
+
+    try {
+      // Set the scenario name for runManualScenario
+      setManualScenarioName(scenarioName.trim());
+      
+      // Run the manual scenario with edited market data
+      runManualScenario();
+      
+      // Close the modal and reset state
+      setIsDataModalOpen(false);
+      setIsEditMode(false);
+      setIsMarketDataModalEditable(false);
+      setScenarioName("");
+      setHasMarketDataChanges(false);
+      
+    } catch (error) {
+      console.error('Error running manual scenario:', error);
+      Modal.error({
+        title: 'Error',
+        content: 'Failed to run manual scenario. Please try again.',
+        okText: 'OK',
+        className: 'dark-theme-modal',
+        style: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        },
+        bodyStyle: {
+          backgroundColor: 'var(--bg-primary)',
+          color: 'var(--text-primary)'
+        }
+      });
+    }
+  };
+
+
+
+  // Initialize market data when modal opens
+  const initializeMarketData = (assetData: any) => {
+    if (!assetData) {
+      console.log('No asset data provided to initializeMarketData');
+      return;
+    }
+
+    console.log('Initializing market data for:', assetData);
+    console.log('Market data structure:', assetData.marketData);
+    console.log('Position data:', assetData.position);
+
+    // Initialize equity data with proper fallbacks
+    const equityData = [
+      { 
+        key: 'spot', 
+        field: 'Spot Price', 
+        value: assetData.marketData?.spot || assetData.position?.price || 0, 
+        prefix: '$', 
+        editable: true 
+      },
+      { 
+        key: 'bid', 
+        field: 'Bid', 
+        value: assetData.marketData?.bid || (assetData.marketData?.spot ? assetData.marketData.spot * 0.999 : 0), 
+        prefix: '$', 
+        editable: true 
+      },
+      { 
+        key: 'ask', 
+        field: 'Ask', 
+        value: assetData.marketData?.ask || (assetData.marketData?.spot ? assetData.marketData.spot * 1.001 : 0), 
+        prefix: '$', 
+        editable: true 
+      },
+      { 
+        key: 'spread', 
+        field: 'Spread', 
+        value: assetData.marketData?.spread || 0, 
+        prefix: '$', 
+        editable: false 
+      },
+      { 
+        key: 'dealSpot', 
+        field: 'Deal Spot', 
+        value: assetData.marketData?.dealSpot || assetData.marketData?.spot || assetData.position?.price || 0, 
+        prefix: '$', 
+        editable: true 
+      },
+      { 
+        key: 'notional', 
+        field: 'Notional', 
+        value: assetData.marketData?.notional || (assetData.position?.quantity * assetData.position?.price) || 0, 
+        prefix: '$', 
+        editable: true, 
+        format: 'number' 
+      }
+    ];
+    
+    console.log('Equity data initialized:', equityData);
   };
 
   // Extract lifecycle data from Murex payload
@@ -1780,80 +2199,12 @@ export default function WorkingEnhancedSimulator() {
       title: "Price ($)", 
       dataIndex: "price", 
       key: "price",
-      render: (value: number, record: Position) => {
-        if (isEditingMarketData && selectedAsset && selectedAsset.key === record.key) {
-          return (
-            <InputNumber
-              size="small"
-              value={value}
-              onChange={(val) => {
-                const updatedPositions = positions.map(pos => 
-                  pos.key === record.key ? { ...pos, price: val || 0 } : pos
-                );
-                setPositions(updatedPositions);
-                // Update selected asset price as well
-                if (selectedAsset.key === record.key) {
-                  setSelectedAsset({ ...selectedAsset, price: val || 0 });
-                }
-              }}
-              style={{ width: '100px' }}
-              precision={2}
-              prefix="$"
-            />
-          );
-        }
-        return `$${value.toFixed(2)}`;
-      }
+      render: (value: number) => `$${value.toFixed(2)}`
     },
     { 
       title: "Value ($)", 
       key: "value",
       render: (_: any, record: Position) => `$${(record.price * record.quantity).toLocaleString()}`
-    },
-    {
-      title: "Action",
-      key: "action",
-      render: (_: any, record: Position) => (
-        <Space size="small">
-          <Button 
-            type="link" 
-            icon={<ExperimentOutlined />}
-            onClick={() => {
-              setSelectedAsset(record);
-              setSelectedAssetData(getAssetMarketData(record.asset, record));
-              setIsDataModalOpen(true);
-              setIsMarketDataModalEditable(true);
-              setIsEditingMarketData(true);
-            }}
-            size="small"
-            title="Edit Market Data & Run Scenario"
-            style={{
-              color: 'var(--primary)',
-              fontWeight: 'bold',
-              padding: '2px 8px',
-              height: 'auto',
-              lineHeight: '1.4'
-            }}
-          >
-            Edit Market data
-          </Button>
-          <Button 
-            type="link" 
-            danger 
-            onClick={() => deletePosition(record.key)}
-            size="small"
-            style={{
-              color: '#ff4d4f',
-              fontWeight: 'bold',
-              padding: '2px 8px',
-              height: 'auto',
-              lineHeight: '1.4'
-            }}
-          >
-            Delete
-          </Button>
-        </Space>
-      ),
     }
   ];
 
@@ -1976,37 +2327,16 @@ export default function WorkingEnhancedSimulator() {
           <Card 
             title="Portfolio Positions with Risk Factors" 
             extra={
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<ExperimentOutlined />}
-                  onClick={() => {
-                    if (selectedAsset) {
-                      setSelectedAssetData(getAssetMarketData(selectedAsset.asset, selectedAsset));
-                      setIsDataModalOpen(true);
-                      setIsMarketDataModalEditable(true);
-                      setIsEditingMarketData(true);
-                    } else {
-                      Modal.warning({
-                        title: 'No Asset Selected',
-                        content: 'Please select an asset from the portfolio to edit its market data.',
-                      });
-                    }
-                  }}
-                  disabled={!selectedAsset}
-                >
-                  Run Manual Scenario
-                </Button>
-                <Button
-                  type="dashed"
-                  icon={<PlusOutlined />}
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  Add Position
-                </Button>
-              </Space>
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                onClick={() => setIsModalOpen(true)}
+              >
+                Add Position
+              </Button>
             }
           >
+            
             <Table
               dataSource={positions}
               columns={positionColumns}
@@ -3571,13 +3901,13 @@ export default function WorkingEnhancedSimulator() {
               ]}
             />
             
-            <Alert
+            {/* <Alert
               message="📋 Comprehensive System Assumptions"
-              description="This enhanced scenario management system includes: Real-time market data integration, comprehensive audit trails, manual scenario editing, backtesting with lifecycle data, and responsive design. All assumptions are based on Murex payload data and industry best practices for testing purposes. Actual market conditions may vary significantly from these assumptions."
+              // description="This enhanced scenario management system includes: Real-time market data integration, comprehensive audit trails, manual scenario editing, backtesting with lifecycle data, and responsive design. All assumptions are based on Murex payload data and industry best practices for testing purposes. Actual market conditions may vary significantly from these assumptions."
               type="info"
               showIcon
               style={{ marginTop: "16px" }}
-            />
+            /> */}
           </Card>
         </TabPane>
 
@@ -3727,6 +4057,7 @@ export default function WorkingEnhancedSimulator() {
                       expandable={{
                         expandedRowRender: (record) => {
                           const isBacktesting = record.scenarioType === 'backtesting';
+                          const isManualEdit = record.scenarioType === 'manual-edit';
                           
                           return (
                             <Card size="small" title="📋 Detailed Scenario Parameters">
@@ -3735,22 +4066,63 @@ export default function WorkingEnhancedSimulator() {
                                   <strong>Scenario ID:</strong> {record.id}
                                 </Col>
                                 <Col span={12}>
-                                  <strong>Session ID:</strong> {record.sessionId}
+                                  <strong>Timestamp:</strong> {new Date(record.timestamp).toLocaleString()}
                                 </Col>
-                                {!isBacktesting && (
+                                {!isBacktesting && !isManualEdit && (
                                   <Col span={12}>
-                                    <strong>Shock Value:</strong> {record.shockValue ? `${(record.shockValue * 100).toFixed(2)}%` : 'N/A'}
+                                    <strong>Shock Value:</strong> {
+                                      record.shockValue && typeof record.shockValue === 'number' 
+                                        ? `${(record.shockValue * 100).toFixed(2)}%` 
+                                        : record.shockValue || 'N/A'
+                                    }
+                                  </Col>
+                                )}
+                                {isManualEdit && (
+                                  <Col span={12}>
+                                    <strong>Edit Type:</strong> {record.shockValue || 'Manual Edit'}
                                   </Col>
                                 )}
                                 <Col span={12}>
-                                  <strong>Assets Analyzed:</strong> {record.assetsAnalyzed}
+                                  <strong>Assets Analyzed:</strong> {record.assetsAnalyzed || record.results?.length || 0}
                                 </Col>
                                 <Col span={12}>
-                                  <strong>Total Impact:</strong> ${record.totalImpact.toLocaleString()}
+                                  <strong>Total Impact:</strong> ${record.totalImpact?.toLocaleString() || '0'}
                                 </Col>
                                 <Col span={12}>
-                                  <strong>Max Loss:</strong> ${record.maxLoss.toLocaleString()}
+                                  <strong>Scope:</strong> {record.scope || record.scenarioScope || 'N/A'}
                                 </Col>
+                                {record.selectedAsset && (
+                                  <Col span={12}>
+                                    <strong>Selected Asset:</strong> {record.selectedAsset}
+                                  </Col>
+                                )}
+                                
+                                {isManualEdit && record.metadata && (
+                                  <>
+                                    <Col span={12}>
+                                      <strong>Edited Asset:</strong> {record.metadata.editedAsset || 'N/A'}
+                                    </Col>
+                                    <Col span={12}>
+                                      <strong>Original Price:</strong> ${record.metadata.usesEditedData ? record.metadata.editedPrice?.toFixed(2) : record.metadata.originalPrice?.toFixed(2) || 'N/A'}
+                                      {record.metadata.usesEditedData && (
+                                        <Tag color="blue" style={{ marginLeft: 8 }}>
+                                          Edited
+                                        </Tag>
+                                      )}
+                                    </Col>
+                                    <Col span={12}>
+                                      <strong>New Price:</strong> ${record.metadata.newPrice?.toFixed(2) || 'N/A'}
+                                    </Col>
+                                    <Col span={24}>
+                                      <strong>Edited Fields:</strong> {record.metadata.editedFields?.join(', ') || 'N/A'}
+                                    </Col>
+                                    {record.metadata.combinedScenarioName && (
+                                      <Col span={24}>
+                                        <strong>Combined Scenario:</strong> {record.metadata.combinedScenarioName}
+                                      </Col>
+                                    )}
+                                  </>
+                                )}
                                 
                                 {isBacktesting && record.backtestMetadata && (
                                   <>
@@ -3922,7 +4294,7 @@ export default function WorkingEnhancedSimulator() {
                           render: (timestamp) => (
                             <div>
                               <div>{new Date(timestamp).toLocaleDateString()}</div>
-                              <div style={{ fontSize: '11px', color: '#999' }}>
+                              <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
                                 {new Date(timestamp).toLocaleTimeString()}
                               </div>
                             </div>
@@ -4171,60 +4543,159 @@ export default function WorkingEnhancedSimulator() {
       {/* Enhanced Market Data Modal with Tabs */}
       <Modal
         title={
-          <div>
-            <strong>📊 Market Data - {selectedAssetData?.asset || 'Asset'}</strong>
-            <div style={{ fontSize: '14px', fontWeight: 'normal', marginTop: '4px', color: '#666' }}>
-              {selectedAssetData?.instrumentName || 'Instrument Name'}
-              {isMarketDataModalEditable && (
-                <Tag color="orange" style={{ marginLeft: '8px' }}>✏️ Editing Mode</Tag>
-              )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div>
+              <strong>📊 Market Data - {selectedAssetData?.asset || 'Asset'}</strong>
+              <div style={{ fontSize: '14px', fontWeight: 'normal', marginTop: '4px', color: 'var(--text-secondary)' }}>
+                {selectedAssetData?.instrumentName || 'Instrument Name'}
+              </div>
             </div>
+            {!isEditMode && (
+              <Button 
+                type="primary" 
+                icon={<ExperimentOutlined />}
+                onClick={enterEditMode}
+                style={{ marginLeft: '16px' }}
+              >
+                Edit Mode
+              </Button>
+            )}
+            {isEditMode && (
+              <Tag color="orange" style={{ marginLeft: '16px' }}>✏️ Edit Mode Active</Tag>
+            )}
           </div>
         }
         open={isDataModalOpen}
         onCancel={() => {
           setIsDataModalOpen(false);
-          if (isMarketDataModalEditable) {
-            setIsMarketDataModalEditable(false);
-            setIsEditingMarketData(false);
-          }
+          setIsEditMode(false);
+          setIsMarketDataModalEditable(false);
+          setScenarioName("");
+          setHasMarketDataChanges(false);
         }}
         footer={
-          isMarketDataModalEditable ? (
-            <div style={{ textAlign: 'right' }}>
-              <Space>
-                <Button onClick={() => {
-                  setIsDataModalOpen(false);
-                  setIsMarketDataModalEditable(false);
-                  setIsEditingMarketData(false);
-                }}>
-                  Cancel
+          <div style={{ textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => setIsDataModalOpen(false)}>
+                Close
+              </Button>
+              {isEditMode && (
+                <Button onClick={exitEditMode}>
+                  Cancel Edit
                 </Button>
-                <Button type="primary" onClick={runManualScenario} disabled={!manualScenarioName.trim()}>
-                  Run Manual Scenario
-                </Button>
-              </Space>
-            </div>
-          ) : null
+              )}
+              {isEditMode && (
+                <>
+                  <Button 
+                    type="primary" 
+                    icon={<PlayCircleOutlined />}
+                    onClick={() => {
+                      console.log('Run Manual Scenario clicked:', { hasMarketDataChanges, scenarioName });
+                      runManualScenarioFromEdit();
+                    }}
+                    disabled={!hasMarketDataChanges}
+                  >
+                    Run Manual Scenario {hasMarketDataChanges ? '(Ready)' : '(No Changes)'}
+                  </Button>
+                  <Button 
+                    type="default" 
+                    icon={<ExperimentOutlined />}
+                    onClick={() => {
+                      // Close the modal and navigate to scenarios tab
+                      setIsDataModalOpen(false);
+                      setIsEditMode(false);
+                      setIsMarketDataModalEditable(false);
+                      
+                      // Switch to scenarios tab
+                      const scenariosTab = document.querySelector('[data-node-key="scenarios"]') as HTMLElement;
+                      if (scenariosTab) scenariosTab.click();
+                      
+                      // Show message about edited data being available
+                      Modal.info({
+                        title: 'Navigate to Scenarios',
+                        content: `You can now run simulations with your edited market data for ${selectedAsset?.asset}. The edited data is preserved in session storage and will be used in scenario calculations.`,
+                        okText: 'Go to Scenarios',
+                        className: 'dark-theme-modal',
+                        style: {
+                          backgroundColor: 'var(--bg-primary)',
+                          color: 'var(--text-primary)'
+                        },
+                        bodyStyle: {
+                          backgroundColor: 'var(--bg-primary)',
+                          color: 'var(--text-primary)'
+                        }
+                      });
+                    }}
+                    disabled={!hasMarketDataChanges}
+                  >
+                    Go to Scenarios {hasMarketDataChanges ? '(With Edited Data)' : '(No Changes)'}
+                  </Button>
+                </>
+              )}
+            </Space>
+          </div>
         }
         width={1200}
       >
         {selectedAssetData && (
           <div>
-            {/* Scenario Name Input for Editing Mode */}
-            {isMarketDataModalEditable && (
+            {/* Scenario Name Input - Only visible in edit mode */}
+            {isEditMode && (
               <Card size="small" style={{ marginBottom: "16px" }}>
                 <Form layout="inline">
                   <Form.Item label="Scenario Name" required>
                     <Input
                       placeholder="Enter scenario name (e.g., 'Market Crash Test')"
-                      value={manualScenarioName}
-                      onChange={(e) => setManualScenarioName(e.target.value)}
+                      value={scenarioName}
+                      onChange={(e) => setScenarioName(e.target.value)}
                       style={{ width: "300px" }}
                     />
                   </Form.Item>
+                  <Form.Item>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
+                      Enter a name for your scenario
+                    </span>
+                  </Form.Item>
                 </Form>
               </Card>
+            )}
+
+            {/* Market Data Changes Alert - Only show in edit mode */}
+            {isEditMode && hasMarketDataChanges && (
+              <div style={{ 
+                marginBottom: '16px', 
+                padding: '12px', 
+                backgroundColor: 'var(--success-light)', 
+                borderRadius: '6px',
+                border: '1px solid var(--success)',
+                color: 'var(--text-primary)'
+              }}>
+                <Space>
+                  <Tag 
+                    color="success" 
+                    icon={<ExperimentOutlined />}
+                    style={{
+                      backgroundColor: 'var(--success)',
+                      color: 'white',
+                      border: 'none'
+                    }}
+                  >
+                    Changes Detected - Ready to Run Scenario
+                  </Tag>
+                  {/* <Button
+                    icon={<ReloadOutlined />}
+                    onClick={() => {
+                      setHasMarketDataChanges(false);
+                      if (selectedAsset) {
+                        setSelectedAssetData(getAssetMarketData(selectedAsset.asset, selectedAsset));
+                      }
+                    }}
+                    style={{ color: 'var(--error)', borderColor: 'var(--error)' }}
+                  >
+                    Reset Changes
+                  </Button> */}
+                </Space>
+              </div>
             )}
 
             {/* Header Info */}
@@ -4341,9 +4812,9 @@ export default function WorkingEnhancedSimulator() {
                     />
                   </div>
                   <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "8px" }}>
-                    <strong>Note:</strong> {isMarketDataModalEditable ? 
-                      'Click on values to edit. Spread is calculated automatically from Bid/Ask.' : 
-                      'Click "Run Manual Scenario" or "Edit Data" in Portfolio tab to enable editing.'
+                    <strong>Note:</strong> {isEditMode ? 
+                      'Values are editable. Enter a scenario name, make changes, and click "Run Manual Scenario" to execute.' : 
+                      'Click "Edit Mode" to start editing values.'
                     }
                   </div>
                 </Card>
@@ -4375,7 +4846,16 @@ export default function WorkingEnhancedSimulator() {
                                 <p><em>Values shown are in USD amounts from the Murex payload.</em></p>
                               </div>
                             ),
-                            width: 400
+                            width: 400,
+                            className: 'dark-theme-modal',
+                            style: {
+                              backgroundColor: 'var(--bg-primary)',
+                              color: 'var(--text-primary)'
+                            },
+                            bodyStyle: {
+                              backgroundColor: 'var(--bg-primary)',
+                              color: 'var(--text-primary)'
+                            }
                           });
                         }}
                       />
@@ -4451,7 +4931,7 @@ export default function WorkingEnhancedSimulator() {
                   </Card>
                 ) : (
                   <Card title="Volatility Surface" size="small">
-                    <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                    <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-tertiary)' }}>
                       No volatility surface data available for this asset
                     </div>
                   </Card>
@@ -4626,7 +5106,7 @@ export default function WorkingEnhancedSimulator() {
               {/* FX Tab */}
               <TabPane tab="💱 FX" key="fx">
                 <Card title="Foreign Exchange Data" size="small">
-                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-tertiary)' }}>
                     <div>💱 FX rate data would be displayed here</div>
                     <div style={{ fontSize: '12px', marginTop: '8px' }}>
                       Currency pair rates from Murex payload
@@ -4642,3 +5122,5 @@ export default function WorkingEnhancedSimulator() {
     </div>
   );
 }
+
+

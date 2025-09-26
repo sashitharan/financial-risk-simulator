@@ -1,2 +1,8 @@
 .vercel
 node_modules
+
+# Local Netlify folder
+.netlify
+
+# Data folder
+src/data/

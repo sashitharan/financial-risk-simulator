@@ -106,7 +106,7 @@ const AppContent = () => {
             textShadow: isDark ? '0 2px 4px rgba(0, 0, 0, 0.5)' : '0 2px 4px rgba(0, 0, 0, 0.3)',
             letterSpacing: '-0.025em'
           }}>
-            Financial Risk Simulation & Portfolio Analysis
+            Portfolio Risk Simulation &  Analytics Engine
           </h1>
           <WorkingEnhancedSimulator />
         </div>
