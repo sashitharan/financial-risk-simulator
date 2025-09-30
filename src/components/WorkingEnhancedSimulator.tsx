@@ -41,7 +41,8 @@ import {
   PlayCircleOutlined,
   CalendarOutlined,
   EyeOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  SaveOutlined
 } from "@ant-design/icons";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { Tooltip as RechartsTooltip } from "recharts";
@@ -1029,10 +1030,19 @@ export default function WorkingEnhancedSimulator() {
     }
   };
 
-  // Helper function to get edited market data from session storage
+  // Helper function to get edited market data from localStorage or session storage
   const getEditedMarketData = () => {
     try {
-      const stored = sessionStorage.getItem('editedMarketData');
+      // First check localStorage (persistent storage)
+      let stored = localStorage.getItem('editedMarketData');
+      if (stored) {
+        const editedData = JSON.parse(stored);
+        console.log('💾 Found edited market data in localStorage:', editedData);
+        return editedData;
+      }
+      
+      // Fallback to sessionStorage
+      stored = sessionStorage.getItem('editedMarketData');
       console.log('🔍 RAW SESSION STORAGE DATA:', stored);
       if (stored) {
         const editedData = JSON.parse(stored);
@@ -1042,7 +1052,7 @@ export default function WorkingEnhancedSimulator() {
         return editedData;
       }
     } catch (error) {
-      console.error('Error loading edited market data from session storage:', error);
+      console.error('Error loading edited market data from storage:', error);
     }
     return null;
   };
@@ -1699,11 +1709,9 @@ export default function WorkingEnhancedSimulator() {
     }
   };
 
-  // Market data editing function
+  // Market data editing function - just updates the UI, doesn't save to storage
   const updateEquityMarketData = (field: string, value: any) => {
     if (!selectedAssetData) return;
-    
-    console.log('updateEquityMarketData called:', { field, value, hasMarketDataChanges });
     
     const updatedAssetData = { ...selectedAssetData };
     if (updatedAssetData.marketData) {
@@ -1720,26 +1728,40 @@ export default function WorkingEnhancedSimulator() {
       
       setSelectedAssetData(updatedAssetData);
       setHasMarketDataChanges(true);
-      
-      // Save edited market data to session storage
-      const editedData = {
-        asset: selectedAsset?.asset,
-        marketData: updatedAssetData.marketData,
-        timestamp: new Date().toISOString(),
-        scenarioName: scenarioName
-      };
-      
-      console.log('🔍 SAVING EDITED DATA TO SESSION STORAGE:', {
-        selectedAsset: selectedAsset,
-        selectedAssetAsset: selectedAsset?.asset,
-        updatedMarketData: updatedAssetData.marketData,
-        editedData: editedData
-      });
-      
-      sessionStorage.setItem('editedMarketData', JSON.stringify(editedData));
-      console.log('✅ Edited market data saved to session storage:', editedData);
+      console.log('📝 Market data updated in UI:', { field, value, updatedData: updatedAssetData.marketData });
     }
   };
+
+  // Save edited market data to localStorage
+  const saveEditedMarketData = () => {
+    if (!selectedAssetData || !selectedAsset) {
+      console.log('❌ Cannot save: missing selectedAssetData or selectedAsset');
+      return;
+    }
+
+    const editedData = {
+      asset: selectedAsset.asset,
+      marketData: selectedAssetData.marketData,
+      timestamp: new Date().toISOString(),
+      scenarioName: scenarioName || 'Manual Edit'
+    };
+    
+    // Save to localStorage for persistence
+    localStorage.setItem('editedMarketData', JSON.stringify(editedData));
+    
+    // Also save to sessionStorage for immediate use
+    sessionStorage.setItem('editedMarketData', JSON.stringify(editedData));
+    
+    console.log('💾 Market data saved to storage:', editedData);
+    
+    // Show success message
+    Modal.success({
+      title: 'Market Data Saved',
+      content: `Market data for ${selectedAsset.asset} has been saved successfully. You can now run scenarios with the edited data.`,
+      okText: 'OK'
+    });
+  };
+
 
 
 
@@ -4570,6 +4592,14 @@ export default function WorkingEnhancedSimulator() {
                 <>
                   <Button onClick={exitEditMode}>
                     Cancel Edit
+                  </Button>
+                  <Button 
+                    type="default"
+                    icon={<SaveOutlined />}
+                    onClick={saveEditedMarketData}
+                    disabled={!hasMarketDataChanges}
+                  >
+                    Save Changes
                   </Button>
                   <Button 
                     type="primary"
