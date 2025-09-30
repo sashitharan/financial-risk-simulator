@@ -1128,10 +1128,10 @@ export default function WorkingEnhancedSimulator() {
         if (editedData.marketData && editedData.marketData.spot) {
           // Equity market data (spot, bid, ask)
           editedPrice = editedData.marketData.spot;
-          // Apply shock to the ORIGINAL position price, not the edited price
-          shockedPrice = pos.price * (1 + shock);
+          // Apply shock to the EDITED price, not the original position price
+          shockedPrice = editedPrice * (1 + shock);
           usingEditedData = true;
-          console.log(`✅ EDITED EQUITY DATA: Original ${pos.price} * (1 + ${shock}) = ${shockedPrice}, Edited price: ${editedPrice}`);
+          console.log(`✅ EDITED EQUITY DATA: Edited ${editedPrice} * (1 + ${shock}) = ${shockedPrice}, Original price: ${pos.price}`);
         } else if (editedData.volatility) {
           // Volatility data - use volatility impact on price
           const volImpact = editedData.volatility.volMatrix[0][0] || 0; // Use first vol point as example
@@ -1260,7 +1260,9 @@ export default function WorkingEnhancedSimulator() {
         shockedPrice = shockedPrice + thetaDecay;
       }
       
-      const impact = (shockedPrice - pos.price) * pos.quantity;
+      // Calculate impact using edited price as baseline if available
+      const baselinePrice = usingEditedData && editedPrice ? editedPrice : pos.price;
+      const impact = (shockedPrice - baselinePrice) * pos.quantity;
       
       // Determine the original price (edited price if available, otherwise position price)
       const originalPrice = usingEditedData && editedPrice ? editedPrice : pos.price;
@@ -1269,8 +1271,9 @@ export default function WorkingEnhancedSimulator() {
         positionPrice: pos.price,
         editedPrice: editedPrice,
         usingEditedData: usingEditedData,
-        originalPrice: originalPrice,
-        shockedPrice: shockedPrice
+        baselinePrice: baselinePrice,
+        shockedPrice: shockedPrice,
+        impact: impact
       });
 
       const result = {
