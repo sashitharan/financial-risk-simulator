@@ -1034,9 +1034,12 @@ export default function WorkingEnhancedSimulator() {
   const getEditedMarketData = () => {
     try {
       const stored = sessionStorage.getItem('editedMarketData');
+      console.log('🔍 RAW SESSION STORAGE DATA:', stored);
       if (stored) {
         const editedData = JSON.parse(stored);
-        console.log('Found edited market data in session storage:', editedData);
+        console.log('🔍 PARSED EDITED MARKET DATA:', editedData);
+        console.log('🔍 EDITED DATA ASSET:', editedData?.asset);
+        console.log('🔍 EDITED DATA MARKET DATA:', editedData?.marketData);
         return editedData;
       }
     } catch (error) {
@@ -1121,6 +1124,14 @@ export default function WorkingEnhancedSimulator() {
       // Check if this asset has edited market data in session storage
       let usingEditedData = false;
       let editedPrice = null;
+      
+      console.log(`🔍 CHECKING ASSET MATCH:`, {
+        currentAsset: pos.asset,
+        editedDataAsset: editedData?.asset,
+        isMatch: editedData && editedData.asset === pos.asset,
+        editedData: editedData
+      });
+      
       if (editedData && editedData.asset === pos.asset) {
         console.log(`✅ USING EDITED MARKET DATA for ${pos.asset}:`, editedData);
         
@@ -1657,6 +1668,7 @@ export default function WorkingEnhancedSimulator() {
   const handleAssetClick = (position: Position) => {
     const marketData = getAssetMarketData(position.asset, position);
     setSelectedAssetData(marketData);
+    setSelectedAsset(position); // Set the selected asset so it can be used for saving edited data
     initializeMarketData(marketData);
     setIsDataModalOpen(true);
   };
