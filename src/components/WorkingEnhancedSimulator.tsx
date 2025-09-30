@@ -21,7 +21,8 @@ import {
   Progress,
   Empty,
   Tooltip,
-  Radio
+  Radio,
+  Divider
 } from "antd";
 import { 
   PlusOutlined, 
@@ -3428,6 +3429,56 @@ export default function WorkingEnhancedSimulator() {
                           </Card>
                         </Col>
                       </Row>
+                      
+                      <Divider />
+                      
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="green">Calculation Formulas</Tag>}>
+                            <Descriptions size="small" column={1}>
+                              <Descriptions.Item label="Equity Price Impact">
+                                <code>P_new = P_original × (1 + shock)</code>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Bond Price Impact">
+                                <code>ΔP = -D × P × Δr + 0.5 × C × P × (Δr)²</code>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Option Price Impact">
+                                <code>ΔP = Δ×ΔS + 0.5×Γ×(ΔS)² + ν×Δσ + Θ×Δt</code>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Portfolio Impact">
+                                <code>Total = Σ(Quantity × Price_Change)</code>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="VaR Calculation">
+                                <code>VaR = μ - z_α × σ × √T</code>
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="purple">Risk Metrics</Tag>}>
+                            <Descriptions size="small" column={1}>
+                              <Descriptions.Item label="Delta (Δ)">
+                                Price sensitivity to underlying asset movement
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Gamma (Γ)">
+                                Rate of change of delta with respect to underlying
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Vega (ν)">
+                                Price sensitivity to volatility changes
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Theta (Θ)">
+                                Price sensitivity to time decay
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Duration">
+                                Interest rate sensitivity measure
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Convexity">
+                                Second-order interest rate sensitivity
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Card>
+                        </Col>
+                      </Row>
                     </div>
                   )
                 },
@@ -3560,6 +3611,53 @@ export default function WorkingEnhancedSimulator() {
                               <li><strong>Immediate Execution:</strong> Run scenarios with edited data</li>
                               <li><strong>History Integration:</strong> Manual scenarios tracked</li>
                             </ul>
+                          </Card>
+                        </Col>
+                      </Row>
+                      
+                      <Divider />
+                      
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="orange">Edited Data Integration</Tag>}>
+                            <Descriptions size="small" column={1}>
+                              <Descriptions.Item label="Data Flow">
+                                <Tag color="blue">Modal → Session → Calculation</Tag>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Shock Application">
+                                <code>Shock applied to original price, not edited price</code>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Result Display">
+                                <Tag color="green">"Edited" label</Tag> Shows when edited data used
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Scope Selection">
+                                <Tag color="purple">Portfolio/Single Asset</Tag> Analysis scope
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Session Persistence">
+                                <Tag color="cyan">Cross-navigation</Tag> Data persists across tabs
+                              </Descriptions.Item>
+                            </Descriptions>
+                          </Card>
+                        </Col>
+                        <Col xs={24} md={12}>
+                          <Card size="small" title={<Tag color="cyan">Calculation Methodology</Tag>}>
+                            <Descriptions size="small" column={1}>
+                              <Descriptions.Item label="Edited Price Display">
+                                Original Price column shows edited value when applicable
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Impact Calculation">
+                                <code>Impact = (Shocked_Price - Original_Price) × Quantity</code>
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Scenario Tracking">
+                                Manual scenarios marked with "manual-edit" type
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Data Validation">
+                                Real-time validation of edited market data
+                              </Descriptions.Item>
+                              <Descriptions.Item label="Debug Logging">
+                                Comprehensive console logging for troubleshooting
+                              </Descriptions.Item>
+                            </Descriptions>
                           </Card>
                         </Col>
                       </Row>
