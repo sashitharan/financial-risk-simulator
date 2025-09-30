@@ -889,15 +889,14 @@ export default function WorkingEnhancedSimulator() {
                   dataIndex: 'originalPrice', 
                   key: 'originalPrice', 
                   render: (value, record: any) => {
-                    // If this record uses edited data, show the edited price as original
+                    // The originalPrice field in the record should already contain the correct baseline price
+                    // (either the edited price or the original position price)
                     const isEditedData = record?.isEditedData;
-                    const editedPrice = record?.editedPrice;
-                    const displayPrice = isEditedData && editedPrice ? editedPrice : value;
+                    const displayPrice = value; // Use the value directly since it should be the correct original price
                     
                     console.log(`🔍 SCENARIO DETAILS DISPLAY for ${record?.asset}:`, {
                       value: value,
                       isEditedData: isEditedData,
-                      editedPrice: editedPrice,
                       displayPrice: displayPrice,
                       record: record
                     });
@@ -905,7 +904,7 @@ export default function WorkingEnhancedSimulator() {
                     return (
                       <span style={{ color: 'var(--text-primary)' }}>
                         {displayPrice ? `$${Number(displayPrice).toFixed(2)}` : 'N/A'}
-                        {isEditedData && editedPrice && (
+                        {isEditedData && (
                           <Tag color="blue" style={{ marginLeft: 8 }}>
                             Edited
                           </Tag>
@@ -1101,6 +1100,7 @@ export default function WorkingEnhancedSimulator() {
     console.log('Scenario scope:', scenarioScope);
     console.log('Selected asset:', selectedAsset?.asset || 'Portfolio-wide');
     console.log('Using market data:', MARKET_DATA);
+    console.log('🔍 POSITIONS ARRAY:', positions.map(p => ({ asset: p.asset, price: p.price })));
     
   // Get edited market data from session storage
   const editedData = getEditedMarketData();
@@ -1276,6 +1276,7 @@ export default function WorkingEnhancedSimulator() {
       const impact = (shockedPrice - baselinePrice) * pos.quantity;
       
       // Determine the original price (edited price if available, otherwise position price)
+      // The "original price" is the baseline price used for the calculation
       const originalPrice = usingEditedData && editedPrice ? editedPrice : pos.price;
 
       console.log(`🔍 PRICE CALCULATION for ${pos.asset}:`, {
@@ -1292,7 +1293,7 @@ export default function WorkingEnhancedSimulator() {
         quantity: pos.quantity,
         shock: shockValue,
         impact,
-        originalPrice: originalPrice,
+        originalPrice: originalPrice, // This will be the edited price if usingEditedData is true
         newPrice: shockedPrice,
         originalValue: originalPrice * pos.quantity,
         shockedValue: shockedPrice * pos.quantity,
@@ -1728,8 +1729,15 @@ export default function WorkingEnhancedSimulator() {
         scenarioName: scenarioName
       };
       
+      console.log('🔍 SAVING EDITED DATA TO SESSION STORAGE:', {
+        selectedAsset: selectedAsset,
+        selectedAssetAsset: selectedAsset?.asset,
+        updatedMarketData: updatedAssetData.marketData,
+        editedData: editedData
+      });
+      
       sessionStorage.setItem('editedMarketData', JSON.stringify(editedData));
-      console.log('Edited market data saved to session storage:', editedData);
+      console.log('✅ Edited market data saved to session storage:', editedData);
     }
   };
 
