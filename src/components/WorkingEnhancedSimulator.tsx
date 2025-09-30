@@ -2152,7 +2152,12 @@ export default function WorkingEnhancedSimulator() {
   ];
 
   return (
-    <div style={{ padding: "24px", maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ 
+      padding: window.innerWidth < 768 ? "12px" : "24px", 
+      maxWidth: "1400px", 
+      margin: "0 auto",
+      minHeight: "100vh"
+    }}>
 
       {/* Murex Data Integration Info
         <Alert
@@ -2217,7 +2222,12 @@ export default function WorkingEnhancedSimulator() {
       </Row>
 
       {/* Main Content */}
-      <Tabs defaultActiveKey="portfolio" size="large">
+      <Tabs 
+        defaultActiveKey="portfolio" 
+        size={window.innerWidth < 768 ? "default" : "large" as any}
+        tabPosition={window.innerWidth < 768 ? "top" : "top"}
+        style={{ marginBottom: window.innerWidth < 768 ? "16px" : "24px" }}
+      >
         <TabPane 
           tab={
             <Space>
@@ -2251,7 +2261,8 @@ export default function WorkingEnhancedSimulator() {
               columns={positionColumns}
               pagination={false}
               bordered
-              size="middle"
+              size={window.innerWidth < 768 ? "small" : "middle"}
+              scroll={{ x: window.innerWidth < 768 ? 800 : undefined }}
               rowSelection={{
                 type: 'radio',
                 selectedRowKeys: selectedAsset ? [selectedAsset.key] : [],
@@ -2443,7 +2454,7 @@ export default function WorkingEnhancedSimulator() {
                     const scenario = ALL_SCENARIOS.find(s => s.id === value);
                     if (scenario) setSelectedScenario(scenario);
                   }}
-                  size="large"
+                  size={window.innerWidth < 768 ? "large" : "large"}
                   placeholder="Select Enhanced Scenario"
                   dropdownStyle={{
                     maxHeight: "400px",
@@ -4420,11 +4431,19 @@ export default function WorkingEnhancedSimulator() {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={addPosition}
-        width={800}
+        width={window.innerWidth < 768 ? "95%" : 800}
+        style={{ 
+          top: window.innerWidth < 768 ? 20 : 100,
+          maxHeight: window.innerWidth < 768 ? "90vh" : "80vh"
+        }}
+        bodyStyle={{
+          maxHeight: window.innerWidth < 768 ? "calc(90vh - 120px)" : "calc(80vh - 120px)",
+          overflowY: "auto"
+        }}
       >
         <Form form={form} layout="vertical">
-          <Row gutter={16}>
-            <Col span={8}>
+          <Row gutter={[window.innerWidth < 768 ? 8 : 16, window.innerWidth < 768 ? 8 : 16]}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item 
                 name="asset" 
                 label="Asset Symbol" 
@@ -4433,7 +4452,7 @@ export default function WorkingEnhancedSimulator() {
                 <Input placeholder="e.g. AAPL, TSLA, MSFT" />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item 
                 name="instrumentType" 
                 label="Instrument Type" 
@@ -4449,7 +4468,7 @@ export default function WorkingEnhancedSimulator() {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} sm={12} md={8}>
               <Form.Item 
                 name="quantity" 
                 label="Quantity" 
@@ -4460,8 +4479,8 @@ export default function WorkingEnhancedSimulator() {
             </Col>
           </Row>
           
-          <Row gutter={16}>
-            <Col span={12}>
+          <Row gutter={[window.innerWidth < 768 ? 8 : 16, window.innerWidth < 768 ? 8 : 16]}>
+            <Col xs={24} sm={12}>
               <Form.Item 
                 name="price" 
                 label="Current Price ($)" 
@@ -4470,18 +4489,27 @@ export default function WorkingEnhancedSimulator() {
                 <InputNumber min={0.01} step={0.01} style={{ width: "100%" }} placeholder="Price per share/unit" />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <div style={{ padding: "16px", background: "var(--bg-secondary)", borderRadius: "6px", marginTop: "30px" }}>
-                <strong>Risk Factors (Greeks)</strong>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+            <Col xs={24} sm={12}>
+              <div style={{ 
+                padding: window.innerWidth < 768 ? "12px" : "16px", 
+                background: "var(--bg-secondary)", 
+                borderRadius: "6px", 
+                marginTop: window.innerWidth < 768 ? "16px" : "30px" 
+              }}>
+                <strong style={{ fontSize: window.innerWidth < 768 ? "14px" : "16px" }}>Risk Factors (Greeks)</strong>
+                <div style={{ 
+                  fontSize: window.innerWidth < 768 ? "11px" : "12px", 
+                  color: "var(--text-secondary)", 
+                  marginTop: "4px" 
+                }}>
                   These will be auto-calculated based on instrument type, or you can override them
                 </div>
               </div>
             </Col>
           </Row>
 
-          <Row gutter={16}>
-            <Col span={6}>
+          <Row gutter={[window.innerWidth < 768 ? 8 : 16, window.innerWidth < 768 ? 8 : 16]}>
+            <Col xs={12} sm={6}>
               <Form.Item 
                 name="delta" 
                 label="Delta (Price Sensitivity)"
@@ -4489,7 +4517,7 @@ export default function WorkingEnhancedSimulator() {
                 <InputNumber step={0.1} style={{ width: "100%" }} placeholder="Auto-calculated" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col xs={12} sm={6}>
               <Form.Item 
                 name="gamma" 
                 label="Gamma (Delta Sensitivity)"
@@ -4497,7 +4525,7 @@ export default function WorkingEnhancedSimulator() {
                 <InputNumber step={0.01} style={{ width: "100%" }} placeholder="Auto-calculated" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col xs={12} sm={6}>
               <Form.Item 
                 name="duration" 
                 label="Duration (Rate Sensitivity)"
@@ -4505,7 +4533,7 @@ export default function WorkingEnhancedSimulator() {
                 <InputNumber step={0.1} style={{ width: "100%" }} placeholder="Auto-calculated" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col xs={12} sm={6}>
               <Form.Item 
                 name="convexity" 
                 label="Convexity"
@@ -4515,8 +4543,8 @@ export default function WorkingEnhancedSimulator() {
             </Col>
           </Row>
 
-          <Row gutter={16}>
-            <Col span={6}>
+          <Row gutter={[window.innerWidth < 768 ? 8 : 16, window.innerWidth < 768 ? 8 : 16]}>
+            <Col xs={12} sm={6}>
               <Form.Item 
                 name="vega" 
                 label="Vega (Vol Sensitivity)"
@@ -4524,7 +4552,7 @@ export default function WorkingEnhancedSimulator() {
                 <InputNumber step={0.1} style={{ width: "100%" }} placeholder="Auto-calculated" />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col xs={12} sm={6}>
               <Form.Item 
                 name="theta" 
                 label="Theta (Time Decay)"
@@ -4532,7 +4560,7 @@ export default function WorkingEnhancedSimulator() {
                 <InputNumber step={0.001} style={{ width: "100%" }} placeholder="Auto-calculated" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Alert
                 message="Risk Factor Guidelines"
                 description={
@@ -4552,10 +4580,26 @@ export default function WorkingEnhancedSimulator() {
       {/* Enhanced Market Data Modal with Tabs */}
       <Modal
         title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <div>
-              <strong>📊 Market Data - {selectedAssetData?.asset || 'Asset'}</strong>
-              <div style={{ fontSize: '14px', fontWeight: 'normal', marginTop: '4px', color: 'var(--text-secondary)' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            width: '100%',
+            flexWrap: window.innerWidth < 768 ? 'wrap' : 'nowrap'
+          }}>
+            <div style={{ 
+              flex: 1,
+              minWidth: window.innerWidth < 768 ? '100%' : 'auto'
+            }}>
+              <strong style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
+                📊 Market Data - {selectedAssetData?.asset || 'Asset'}
+              </strong>
+              <div style={{ 
+                fontSize: window.innerWidth < 768 ? '12px' : '14px', 
+                fontWeight: 'normal', 
+                marginTop: '4px', 
+                color: 'var(--text-secondary)' 
+              }}>
                 {selectedAssetData?.instrumentName || 'Instrument Name'}
               </div>
             </div>
@@ -4575,6 +4619,16 @@ export default function WorkingEnhancedSimulator() {
           </div>
         }
         open={isDataModalOpen}
+        width={window.innerWidth < 768 ? "95%" : "90%"}
+        style={{ 
+          top: window.innerWidth < 768 ? 20 : 50,
+          maxHeight: window.innerWidth < 768 ? "95vh" : "90vh"
+        }}
+        bodyStyle={{
+          maxHeight: window.innerWidth < 768 ? "calc(95vh - 120px)" : "calc(90vh - 120px)",
+          overflowY: "auto",
+          padding: window.innerWidth < 768 ? "12px" : "24px"
+        }}
         onCancel={() => {
           setIsDataModalOpen(false);
           setIsEditMode(false);
@@ -4653,7 +4707,6 @@ export default function WorkingEnhancedSimulator() {
             </Space>
           </div>
         }
-        width={1200}
       >
         {selectedAssetData && (
           <div>
