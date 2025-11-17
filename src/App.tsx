@@ -1,6 +1,7 @@
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider, theme, Tabs } from 'antd';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import WorkingEnhancedSimulator from './components/WorkingEnhancedSimulator';
+import RiskMatrix from './components/RiskMatrix';
 import ThemeToggle from './components/ThemeToggle';
 import './App.css';
 
@@ -108,7 +109,28 @@ const AppContent = () => {
           }}>
             Portfolio Risk Simulation &  Analytics Engine
           </h1>
-          <WorkingEnhancedSimulator />
+          <Tabs
+            defaultActiveKey="simulator"
+            size="large"
+            items={[
+              {
+                key: 'simulator',
+                label: 'Scenario Simulator',
+                children: <WorkingEnhancedSimulator />
+              },
+              {
+                key: 'risk-matrix',
+                label: 'Risk Matrix',
+                children: <RiskMatrix />
+              }
+            ]}
+            style={{
+              background: isDark ? 'rgba(31, 31, 31, 0.5)' : 'rgba(255, 255, 255, 0.5)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '12px',
+              padding: '24px'
+            }}
+          />
         </div>
       </div>
     </ConfigProvider>

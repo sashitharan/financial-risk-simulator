@@ -6,3 +6,6 @@ node_modules
 
 # Data folder
 src/data/
+
+# macOS
+.DS_Store
