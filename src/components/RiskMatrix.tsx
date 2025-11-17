@@ -22,7 +22,6 @@ import {
   PlusOutlined,
   DeleteOutlined,
   InfoCircleOutlined,
-  WarningOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
 import { useTheme } from '../contexts/ThemeContext';
